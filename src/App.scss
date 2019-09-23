@@ -1,0 +1,20 @@
+@import 'react-md/src/scss/react-md';
+
+$md-light-theme: false;
+$md-primary-color: $md-grey-400;
+$md-secondary-color: $md-grey-700;
+
+@include react-md-everything;
+
+.App {
+  text-align: center;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
