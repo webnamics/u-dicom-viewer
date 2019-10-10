@@ -7,7 +7,7 @@ import * as cornerstoneWebImageLoader from "cornerstone-web-image-loader";
 import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 import * as dicomParser from 'dicom-parser'
 import {connect} from 'react-redux'
-import {dcmDataStore, loadLocalfile, loadUrl, dcmIsOpen, dcmNumberOfFrames, dcmTool} from '../actions'
+import {loadLocalfile, loadUrl, dcmIsOpen, dcmNumberOfFrames, dcmTool, dcmDataStore, measureStore, measureRemove, measureClear} from '../actions'
 //import {black} from "ansi-colors";
 import {uids} from '../constants/uids'
 import { SETTINGS_SAVEAS } from '../constants/settings'
@@ -17,12 +17,12 @@ import { SETTINGS_SAVEAS } from '../constants/settings'
 import OpenUrlDlg from './OpenUrlDlg'
 import CinePlayer from './CinePlayer'
 //import { SETTINGS_OVERLAY } from '../constants/settings'
-import { getSettingsOverlay } from '../functions'
+import { getSettingsOverlay, getSettingsMeasurement } from '../functions'
 import { isBrowser, isMobile } from 'react-device-detect'
 import { import as csTools } from 'cornerstone-tools'
-//import { from } from "rxjs";
-const scrollToIndex = csTools('util/scrollToIndex')
+import db from '../db'
 
+const scrollToIndex = csTools('util/scrollToIndex')
 
 const heightToolbar = 0
 
@@ -68,11 +68,15 @@ class DicomViewer extends React.Component {
       this.dicomImage = null
       this.imageId = null
       this.image = null
-      this.imageWidth = window.innerWidth
-      this.imageHeight = window.innerHeight-72
+      this.state.imageWidth = window.innerWidth
+      this.state.imageHeight = isBrowser ? window.innerHeight-82 : window.innerHeight-82
+      //console.log('this.state.imageWidth: ', this.state.imageWidth)
+      //console.log('this.state.imageHeight: ', this.state.imageHeight)
     }
 
     state = { 
+      imageWidth: 0,
+      imageHeight: 0,
       file: null,
       visibleOpenUrlDlg: false,
       progress: null,
@@ -90,19 +94,12 @@ class DicomViewer extends React.Component {
       cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
       cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
       cornerstoneTools.external.Hammer = Hammer;
-      //dicomLoader(cornerstone);
-      //exampleImageIdLoader(cornerstone);
     }
   
     componentDidMount() {
       window.scrollTo(0, 1)
       this.props.runTool(this)
       this.props.changeTool(this)
-      //this.props.openFile(this)
-      //cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
-      //console.log('this.imageId: ', this.imageId);
-      //if (this.imageId === null) return;
-      //this.loadImage();
     }
 
     componentWillUnmount() {
@@ -113,9 +110,6 @@ class DicomViewer extends React.Component {
   
     onOpenUrl = (e) => {
       const eventData = e.detail
-      //const loadProgress = document.getElementById('loadProgress');
-      //loadProgress.textContent = `Image Load Progress: ${eventData.percentComplete}%`;
-      //console.log('eventData.percentComplete: ', eventData.percentComplete)
       this.setState({ progress: eventData.percentComplete })
     }
 
@@ -127,36 +121,45 @@ class DicomViewer extends React.Component {
     }
   
     hideOpenUrlDlg = () => {
-      //console.log('hideOpenUrlDlg: ', this.state.visibleOpenUrlDlg)
       this.setState({ visibleOpenUrlDlg: false, progress: null })
     }
 
 
     getTransferSyntax = (image) => {
-      const value = image.data.string('x00020010');
-      return value + ' [' + uids[value] + ']';
+      const value = image.data.string('x00020010')
+      return value + ' [' + uids[value] + ']'
     }
 
     getSopClass = (image) => {
-      const value = image.data.string('x00080016');
-      return value + ' [' + uids[value] + ']';
+      const value = image.data.string('x00080016')
+      return value + ' [' + uids[value] + ']'
+    }
+
+    getSopInstanceUID = (image) => {
+      const value = image.data.string('x00080018')
+      return value
     }
 
     getPixelRepresentation = (image) => {
-      const value = image.data.uint16('x00280103');
+      const value = image.data.uint16('x00280103')
       if (value === undefined) return
-      return value + (value === 0 ? ' (unsigned)' : ' (signed)');
+      return value + (value === 0 ? ' (unsigned)' : ' (signed)')
     }
 
     getPlanarConfiguration = (image) => {
-      const value = image.data.uint16('x00280006');
-      if(value === undefined) return 
-      return value + (value === 0 ? ' (pixel)' : ' (plane)');
+      const value = image.data.uint16('x00280006')
+      if (value === undefined) return 
+      return value + (value === 0 ? ' (pixel)' : ' (plane)')
     }
     
     // Listen for changes to the viewport so we can update the text overlays in the corner
     onImageRendered = (e) => {
-      console.log('cornerstoneimagerendered: ')
+      //console.log('cornerstoneimagerendered: ')
+
+      this.setState({
+        imageWidth: isBrowser ? window.innerWidth : window.innerWidth,
+        imageHeight: isBrowser ? window.innerHeight-82 : window.innerHeight-82
+      })
 
       const viewport = cornerstone.getViewport(e.target)
 
@@ -186,8 +189,43 @@ class DicomViewer extends React.Component {
         ).textContent = `${this.state.frame} / ${this.props.numberOfFrames}`
         if (this.state.inPlay) this.setState({frame: this.state.frame+1})
       }
+
+      console.log('this.props.measure: ', this.props.measure)
     }
 
+    onMeasurementAdded = (e) => {
+      console.log('cornerstonetoolsmeasurementadded: ', e.detail.measurementData)
+      /*
+      if (getSettingsMeasurement() === 1) {
+        try {
+          db.measurement.add({
+            sopinstanceuid: this.dataHeader.sopInstanceUid, 
+            tool: this.props.tool,
+            data: e.detail.measurementData
+          })
+        } catch(error) {
+          console.error(error)
+        }
+      }
+      */
+    }
+
+    onMeasurementModified = (e) => {
+      //console.log('cornerstonetoolsmeasurementmodified: ', e.detail.measurementData)
+      
+    }
+
+    onMeasurementCompleted = (e) => {
+      console.log('cornerstonetoolsmeasurementcompleted: ', e.detail.measurementData)
+      
+      const measure = {
+        tool: this.props.tool,
+        note: '',
+        data: e.detail.measurementData
+      }
+      this.props.measurementStore(measure)
+    }
+    
     loadImage = (localfile, url=undefined) => {
       console.log('loadImage, localfile: ', localfile)
 
@@ -201,7 +239,11 @@ class DicomViewer extends React.Component {
  
       const element = this.dicomImage
 
+      element.addEventListener("cornerstonenewimage", this.onNewImage)
       element.addEventListener("cornerstoneimagerendered", this.onImageRendered)
+      element.addEventListener("cornerstonetoolsmeasurementadded", this.onMeasurementAdded)
+      element.addEventListener("cornerstonetoolsmeasurementmodified", this.onMeasurementModified)
+      element.addEventListener("cornerstonetoolsmeasurementcompleted", this.onMeasurementCompleted)
 
       cornerstoneTools.init(isMobile ? {touchEnabled: true} : {mouseEnabled: true})
 
@@ -236,6 +278,7 @@ class DicomViewer extends React.Component {
         
         this.props.dataStore(['Transfer Syntax', this.getTransferSyntax(image)])
         this.props.dataStore(['SOP Class', this.getSopClass(image)])
+        this.props.dataStore(['SOP Instance UID', this.getSopInstanceUID(image)])
         this.props.dataStore(['Frame Rate', image.data.string('x00082144')])
         this.props.dataStore(['Samples per Pixel', image.data.uint16('x00280002')])
         this.props.dataStore(['Photometric Interpretation', image.data.string('x00280004')])
@@ -259,6 +302,7 @@ class DicomViewer extends React.Component {
         this.dataHeader = {
           transferSyntax: this.getTransferSyntax(image),
           sopClass: this.getSopClass(image),
+          sopInstanceUid: this.getSopInstanceUID(image),
           PatientsName: image.data.string('x00100010'),
           samplesPerPixel: image.data.uint16('x00280002'), 
           photometricInterpretation: image.data.string('x00280004'),
@@ -281,22 +325,11 @@ class DicomViewer extends React.Component {
           maxStoredPixelValue: image.maxPixelValue,
         }
         console.log('this.dataHeader: ', this.dataHeader)
-        
 
-        //this.imageWidth = image.width
-        //this.imageHeight = image.height
-        this.imageWidth = window.innerWidth
-        this.imageHeight = window.innerHeight-72  
-
-        //document.body.style = 'background: #000000;'
-
-        /*console.log('this.props.header: ', this.props.header)
-        this.props.header.forEach(item => {
-          if (item.name === "Number of Frames")
-            console.log('Number of Frames: ', item.value)
-        })*/
-        //const frames = this.props.header.find(x => x.name === "Number of Frames").value
-        //const frames = this.props.header.filter(x => x.name === "Number of Frames")[0].value
+        this.setState({
+          imageWidth: isBrowser ? window.innerWidth : window.innerWidth,
+          imageHeight: isBrowser ? window.innerHeight-82 : window.innerHeight-82
+        })
 
         let stack = { currentImageIdIndex: 0, imageIds: "" }
         let nFrames = image.data.intString('x00280008')
@@ -310,7 +343,8 @@ class DicomViewer extends React.Component {
           stack.imageIds = imageIds;
           console.log(stack.imageIds)
         }
- 
+
+        console.log('displayImage: ')
         cornerstone.displayImage(element, image)
         //cornerstoneTools.mouseInput.enable(element);
         //cornerstoneTools.mouseWheelInput.enable(element);
@@ -342,26 +376,22 @@ class DicomViewer extends React.Component {
         //cornerstoneTools.addTool(FreehandRoiTool)
         cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
-        //cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
-        //cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
-        //cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
-        //cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
-        //cornerstoneTools.probe.enable(element);
-        //cornerstoneTools.length.enable(element);
-        //cornerstoneTools.ellipticalRoi.enable(element);
-        //cornerstoneTools.rectangleRoi.enable(element);
-        //cornerstoneTools.angle.enable(element);
-        //cornerstoneTools.highlight.enable(element);
-
-        //this.forceUpdate()
-        //cornerstone.updateImage(element)
-
         if (nFrames > 1) {
           cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);    
           cornerstoneTools.addToolState(element, 'stack', stack)
           cornerstoneTools.setToolActive('StackScrollMouseWheel', { })
-          //cornerstoneTools.playClip(element, 30)
         }
+ 
+        // Load the possible measurements from DB and save in the store 
+        db.measurement.where('sopinstanceuid').equals(this.dataHeader.sopInstanceUid).each(measure => {
+          console.log('load measure from db: ', measure)
+          this.props.measurementStore(measure)
+          cornerstoneTools.addToolState(element, measure.tool, measure.data)
+          this.runTool(measure.tool)
+          cornerstone.updateImage(element)
+        })
+
+
       })
     }
   
@@ -386,78 +416,190 @@ class DicomViewer extends React.Component {
       cornerstoneTools.setToolDisabled('StackScrollMouseWheel')
     }
   
-    runTool = (toolName, file) => {
+    runTool = (toolName, opt) => {
       console.log('run tool: ', toolName)
       
-      this.disableAllTools()
+//      this.disableAllTools()
       switch (toolName) {
-        case 'openfile':
+        case 'openfile': {
           cornerstone.disable(this.dicomImage)
-          this.setState({ file: file })
-          this.loadImage(file)
-          break    
-        case 'openurl':
-            this.showOpenUrlDlg(file)
+          this.setState({ file: opt })
+          this.loadImage(opt)
+          break   
+        } 
+        case 'openurl': {
+            this.showOpenUrlDlg(opt)
             break                 
-        case 'clear':
+        }
+        case 'clear': {
           this.props.isOpenStore(false)
           this.props.numberOfFramesStore(1)
           cornerstone.disable(this.dicomImage)
           break
-        case 'notool':
+        }  
+        case 'notool': {
+          //const element = this.dicomImage
+
+          //cornerstoneTools.clearToolState(element, 'Length')
           
+          //const toolStateManager = cornerstoneTools.getElementToolStateManager(element)
+          //console.log('toolStateManager.toolState: ', toolStateManager.toolState)
+          /*
+          const toolState = toolStateManager.toolState
+          // const allTools = Object.keys(toolState).map(key => toolState[key])
+          let key = Object.keys(toolState)[0]
+          let allTools = toolState[key]
+          //console.log('allTools: ', allTools)
+
+          for (let [tool, data] of Object.entries(allTools)) {
+            //console.log(`${tool}: `, data)
+            let key = Object.keys(data)[0]
+            let tools = data[key]
+            //console.log('tools: ', tools)
+            tools.forEach(item => {
+              //console.log('tool: ', tool)
+              //console.log(item)
+              const measure = {
+                tool: tool,
+                note: '',
+                data: item
+              }
+              console.log('measure: ', measure)
+              this.props.measurementStore(measure)
+            })
+          }
+          */
+          //const toolState = toolStateManager.get(element, 'Length')
+          //console.log('toolState: ', toolState)
+
+          /*
+          const measurementData = {
+            visible: true,
+            active: true,
+            invalidated: true,
+            handles: {
+                start: {
+                    x: 100,
+                    y: 100,
+                    highlight: true,
+                    active: false
+                },
+                end: {
+                    x: 200,
+                    y: 200,
+                    highlight: true,
+                    active: true
+                },
+                textBox: {
+                    active: false,
+                    hasMoved: false,
+                    movesIndependently: false,
+                    drawnIndependently: true,
+                    allowedOutsideImage: true,
+                    hasBoundingBox: true
+                }
+              }
+          }
+          cornerstoneTools.addToolState(element, 'RectangleRoi', measurementData)    
+          cornerstoneTools.setToolActive('RectangleRoi', { mouseButtonMask: 1 })
+          */  
+          //cornerstone.updateImage(element)   
           break
-        case 'wwwc':
-          //this.enableTool("wwwc", 1)
+        }
+        case 'Wwwc': {
           cornerstoneTools.setToolActive('Wwwc', { mouseButtonMask: 1 })
           break
-        case 'pan':
-          //this.enableTool("pan", 3)
+        }  
+        case 'Pan': {
           cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 1 })
           break   
-        case 'zoom':
-          //this.enableTool("zoom", 5)
+        }  
+        case 'Zoom': {
           cornerstoneTools.setToolActive(isMobile ? 'ZoomTouchPinch' : 'Zoom', { mouseButtonMask: 1 })
           break
-        case 'length':
-          //this.enableTool('Length', 1)
+         }
+        case 'Length': {
           cornerstoneTools.setToolActive('Length', isMobile ? { isTouchActive: true } : { mouseButtonMask: 1 })
           break  
-        case 'probe':
-          //this.enableTool("probe", 1)
-          cornerstoneTools.setToolActive('Probe', { mouseButtonMask: 1 })
+        }
+        case 'Probe': {
+            cornerstoneTools.setToolActive('Probe', { mouseButtonMask: 1 })
           break
-        case 'ellipticalroi':
-          //this.enableTool("ellipticalRoi", 1)
+        }
+        case 'EllipticalRoi': {
           cornerstoneTools.setToolActive('EllipticalRoi', { mouseButtonMask: 1 })
-          break    
-        case 'rectangleroi':
-          //this.enableTool("rectangleRoi", 1)
+          break   
+        }
+        case 'RectangleRoi': {
           cornerstoneTools.setToolActive('RectangleRoi', { mouseButtonMask: 1 })
           break  
-        case 'angle':
-          //this.enableTool("angle", 1)
+        }
+        case 'Angle': {
           cornerstoneTools.setToolActive('Angle', { mouseButtonMask: 1 })
-          break      
-        case 'magnify':
-          //this.enableTool("highlight", 1)
+          break 
+        }
+        case 'Magnify': {
           cornerstoneTools.setToolActive('Magnify', { mouseButtonMask: 1 })
-          break   
-        case 'freeformroi':
+          break  
+        }
+        case 'FreeformRoi': {
           cornerstoneTools.setToolActive('FreehandRoi', { mouseButtonMask: 1 })
-          break            
-        case 'saveas':
+          break 
+        }
+        case 'saveas': {
             let type = localStorage.getItem(SETTINGS_SAVEAS)
             cornerstoneTools.SaveAs(this.dicomImage, `${this.state.file.name}.${type}`, `image/${type}`)      
           break
-        case 'cine':
+        }
+        case 'cine': {
           this.setState({ visibleCinePlayer: !this.state.visibleCinePlayer })
           break
-        case 'reset':
+        }
+        case 'reset': {
           this.reset()
           break
-        default:
+        }
+        case 'removetool': {
+          //console.log('opt: ', opt)
+          const element = this.dicomImage
+          cornerstoneTools.removeToolState(element, this.props.measure[opt].tool, this.props.measure[opt].data)
+          cornerstone.updateImage(element)
+          this.props.measurementRemoveStore(opt)
           break
+        }  
+        case 'removetools': {   
+          const element = this.dicomImage
+          // for each measurement remove it 
+          this.props.measure.forEach(measure => {
+            cornerstoneTools.clearToolState(element, measure.tool)         
+          })
+          cornerstone.updateImage(element)
+          this.props.measurementClearStore()
+          // also remove all measurements from db
+          db.measurement.where('sopinstanceuid').equals(this.dataHeader.sopInstanceUid).delete()
+          break
+        }  
+        case 'savetools': {
+          // first, remove eventually previous measurements from db
+          db.measurement.where('sopinstanceuid').equals(this.dataHeader.sopInstanceUid).delete()
+          // then save all the current measurements
+          this.props.measure.forEach(measure => {
+            try {
+              db.measurement.add({
+                sopinstanceuid: this.dataHeader.sopInstanceUid, 
+                tool: measure.tool,
+                note: measure.note,
+                data: measure.data
+              })
+            } catch(error) {
+              console.error(error)
+            }                       
+          })
+          break
+        }
+        default: {
+          break
+        }
       }
     } 
 
@@ -465,70 +607,70 @@ class DicomViewer extends React.Component {
       console.log('change tool, value: ', toolName, value)
 
       switch (toolName) {
-        case 'wwwc':
+        case 'Wwwc':
           if (value === 1) {
             cornerstoneTools.setToolActive('Wwwc', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Wwwc')
           }
           break  
-        case 'pan':
+        case 'Pan':
           if (value === 1) {
             cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Pan')
           }
           break    
-        case 'zoom':
+        case 'Zoom':
           if (value === 1) {
             cornerstoneTools.setToolActive(isMobile ? 'ZoomTouchPinch' : 'Zoom', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive(isMobile ? 'ZoomTouchPinch' : 'Zoom')
           }
           break                             
-        case 'length':
+        case 'Length':
           if (value === 1) {
             cornerstoneTools.setToolActive('Length', isMobile ? { isTouchActive: true } : { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Length')
           }
           break   
-        case 'probe':
+        case 'Probe':
           if (value === 1) {
             cornerstoneTools.setToolActive('Probe', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Probe')
           }
           break        
-        case 'angle':
+        case 'Angle':
           if (value === 1) {
             cornerstoneTools.setToolActive('Angle', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Angle')
           }          
           break   
-        case 'magnify':
+        case 'Magnify':
           if (value === 1) {
             cornerstoneTools.setToolActive('Magnify', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Magnify')
           }          
           break        
-        case 'ellipticalroi':
+        case 'EllipticalRoi':
           if (value === 1) {
             cornerstoneTools.setToolActive('EllipticalRoi', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('EllipticalRoi')
           }
           break   
-        case 'rectangleroi':
+        case 'RectangleRoi':
           if (value === 1) {
             cornerstoneTools.setToolActive('RectangleRoi', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('RectangleRoi')
           }
           break
-        case 'freehandroi':
+        case 'FreehandRoi':
           if (value === 1) {
             cornerstoneTools.setToolActive('FreehandRoi', { mouseButtonMask: 1 })
           } else if (value === 0) {
@@ -596,19 +738,14 @@ class DicomViewer extends React.Component {
       //console.log('this.imageWidth: ', this.imageWidth)
       //console.log('this.imageHeight: ', this.imageHeight)
 
-      //let width = this.imageWidth
-      //let height = this.imageHeight
-
-      //console.log('render, width: ', width)
-
       this.props.visible ? document.body.style = 'background: #000000;' : document.body.style = 'background: $md-grey-700;'
 
       const visibleOpenUrlDlg = this.state.visibleOpenUrlDlg
       const progress = this.state.progress
 
       const styleDicomImage = {
-        width: this.imageWidth,
-        height: this.imageHeight,
+        width: this.state.imageWidth, //this.imageWidth,
+        height: this.state.imageHeight, //this.imageHeight,
         top: {heightToolbar},
         left: 0,
         position: "absolute"
@@ -634,8 +771,8 @@ class DicomViewer extends React.Component {
                 role="button"
                 tabIndex="0"
                 style={{
-                  width: this.imageWidth,
-                  height: this.imageHeight,
+                  width: this.state.imageWidth, //this.imageWidth,
+                  height: this.state.imageHeight, // this.imageHeight,
                   position: "relative",
                   display: "inline-block",
                   color: "white"
@@ -691,18 +828,22 @@ const mapStateToProps = (state) => {
     isOpen: state.isOpen,
     numberOfFrames: state.numberOfFrames,
     tool: state.tool,
-    header: state.header
+    header: state.header,
+    measure: state.measure
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    dataStore: (data) => dispatch(dcmDataStore(data)),
     localfileStore: (file) => dispatch(loadLocalfile(file)),
     isOpenStore: (value) => dispatch(dcmIsOpen(value)),
     numberOfFramesStore: (value) => dispatch(dcmNumberOfFrames(value)),
     toolStore: (tool) => dispatch(dcmTool(tool)),
-    urlStore: (url) => dispatch(loadUrl(url))
+    urlStore: (url) => dispatch(loadUrl(url)),
+    dataStore: (data) => dispatch(dcmDataStore(data)),
+    measurementStore: (measure) => dispatch(measureStore(measure)),
+    measurementRemoveStore: (index) => dispatch(measureRemove(index)),
+    measurementClearStore: () => dispatch(measureClear()),
   }
 }
 

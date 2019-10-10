@@ -2,12 +2,13 @@ import React, { PureComponent } from 'react'
 import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup'
 //import { withRouter } from 'react-router'
 //import { Link, Route, Switch } from 'react-router-dom'
-import { Button, Drawer, Toolbar } from 'react-md'
+import { Button, DialogContainer, Drawer, Toolbar } from 'react-md'
 import { FontIcon } from 'react-md'
 //import { SVGIcon } from 'react-md'
 import {connect} from 'react-redux'
 import DicomViewer from './components/dicomviewer'
 import HeaderItem from './components/HeaderItem'
+import MeasureItem from './components/MeasureItem'
 import Settings from './components/Settings'
 import OpenUrl from './components/OpenUrl'
 import { SETTINGS_DCMHEADER } from './constants/settings'
@@ -17,7 +18,7 @@ import {deviceDetect} from 'react-device-detect'
 import {dcmTool} from './actions/index'
 //import { GiArrowCursor } from 'react-icons/gi'
 import Icon from '@mdi/react'
-import { mdiCursorDefault, mdiFileDocument } from '@mdi/js'
+import { mdiCursorDefault, mdiFileDocument, mdiFileCad, mdiTrashCanOutline, mdiContentSaveOutline } from '@mdi/js'
 
 import './App.css';
 
@@ -65,84 +66,84 @@ class App extends PureComponent {
         this.toolExecute('notool')
       },
     }, {       
-      key: 'wwwc',
+      key: 'Wwwc',
       primaryText: 'WW/WC',
       leftIcon: <FontIcon>open_with</FontIcon>,
       onClick: () => {
         iconTool = 'open_with'
-        this.toolExecute('wwwc')
+        this.toolExecute('Wwwc')
       },
     }, {     
-      key: 'pan',
+      key: 'Pan',
       primaryText: 'Pan',
       leftIcon: <FontIcon>pan_tool</FontIcon>,
       onClick: () => {
         iconTool = 'pan_tool'
-        this.toolExecute('pan')
+        this.toolExecute('Pan')
       },
     }, {
-      key: 'zoom',
+      key: 'Zoom',
       primaryText: 'Zoom',
       leftIcon: <FontIcon>search</FontIcon>,
       onClick: () => {
         iconTool = 'search'
-        this.toolExecute('zoom')
+        this.toolExecute('Zoom')
       },
     }, {
-      key: 'magnify',
+      key: 'Magnify',
       primaryText: 'Magnify',
       leftIcon: <FontIcon>image_search</FontIcon>,
       onClick: () => {
         iconTool = 'image_search'
-        this.toolExecute('magnify')
+        this.toolExecute('Magnify')
       },
     }, {      
-      key: 'length',
+      key: 'Length',
       primaryText: 'Length',
       leftIcon: <FontIcon>straighten</FontIcon>,
       onClick: () => {
         iconTool = 'straighten'
-        this.toolExecute('length')
+        this.toolExecute('Length')
       },
     }, {
-      key: 'probe',
+      key: 'Probe',
       primaryText: 'Probe',
       leftIcon: <FontIcon>trip_origin</FontIcon>,
       onClick: () => {
         iconTool = 'trip_origin'
-        this.toolExecute('probe')
+        this.toolExecute('Probe')
       },
     }, {
-      key: 'angle',
+      key: 'Angle',
       primaryText: 'Angle',
       leftIcon: <FontIcon>share</FontIcon>,
       onClick: () => {
         iconTool = 'share'
-        this.toolExecute('angle')
+        this.toolExecute('Angle')
       },
     }, {
-      key: 'ellipticalroi',
+      key: 'EllipticalRoi',
       primaryText: 'Elliptical Roi',
       leftIcon: <FontIcon>vignette</FontIcon>,
       onClick: () => {
         iconTool = 'vignette'
-        this.toolExecute('ellipticalroi')
+        this.toolExecute('EllipticalRoi')
       },
     }, {
-      key: 'rectangleroi',
+      key: 'RectangleRoi',
       primaryText: 'Rectangle Roi',
       leftIcon: <FontIcon>branding_watermark</FontIcon>,
       onClick: () => {
         iconTool = 'branding_watermark'
-        this.toolExecute('rectangleroi')
+        this.toolExecute('RectangleRoi')
       },
     }, /*{      
-      key: 'freehandroi',
+      key: 'FreehandRoi',
       primaryText: 'Freehand',
       leftIcon: <FontIcon>gesture</FontIcon>,
       onClick: () => {
         iconTool = 'gesture'
-        this.toolExecute('freehandroi')
+        this.toolExecute('FreehandRoi')
       },
     }*/
   ]
@@ -170,6 +171,8 @@ class App extends PureComponent {
     visibleSettings: false,
     visibleToolbar: true,
     visibleOpenUrl: false,
+    visibleMeasure: false,
+    visibleClearMeasureDlg: false,
     toolState: 1,
   }
 
@@ -203,16 +206,17 @@ class App extends PureComponent {
     this.setState({ visibleMain })
   }
 
+
   showHeader = () => {
-    this.setState({ visibleHeader: true, position: 'right' });
+    this.setState({ visibleHeader: true, position: 'right' })
   }
 
   hideHeader = () => {
-    this.setState({ visibleHeader: false });
+    this.setState({ visibleHeader: false })
   }
 
   handleVisibilityHeader = (visibleHeader) => {
-    this.setState({ visibleHeader });
+    this.setState({ visibleHeader })
   }
 
   saveHeader = () => {
@@ -240,6 +244,41 @@ class App extends PureComponent {
   }
 
 
+  saveMeasure = () => {
+    this.runTool.runTool('savetools')
+  }
+
+  
+  showMeasure = () => {
+    this.setState({ visibleMeasure: true, position: 'right' })
+  }
+
+  hideMeasure = () => {
+    this.setState({ visibleMeasure: false })
+  }
+
+  handleVisibilityMeasure = (visibleMeasure) => {
+    this.setState({ visibleMeasure })
+  }
+
+  clearMeasure = () => {
+    this.showClearMeasureDlg()
+  }
+
+  showClearMeasureDlg = () => {
+    this.setState({ visibleClearMeasureDlg: true })
+  }
+
+  hideClearMeasureDlg = () => {
+      this.setState({ visibleClearMeasureDlg: false })
+  }
+
+  confirmClearMeasureDlg = () => {
+    this.hideClearMeasureDlg()
+    this.runTool.runTool('removetools')
+  }
+
+
   showSettings = () => {
     this.setState({ visibleDcm: false, visibleMain: false, visibleSettings: true, visibleToolbar: false, position: 'right' });
   }
@@ -264,16 +303,6 @@ class App extends PureComponent {
         return(openDlg ? this.runTool.runTool('openurl', url) : null)
       })
   }
-
-/*  
-  showOpenUrlDlg = () => {
-    this.setState({ visibleOpenUrlDlg: true })
-  }
-
-  hideOpenUrlDlg = () => {
-    this.setState({ visibleOpenUrlDlg: false })
-  }
-*/
 
   downloadOpenUrl = () => {
     this.setState({ visibleDcm: true, visibleOpenUrl: false, visibleToolbar: true })
@@ -311,6 +340,10 @@ class App extends PureComponent {
     })
   }
 
+  toolRemove = (index) => {
+    this.runTool.runTool('removetool', index)
+  }
+  
   render() {
     const visibleDcm = this.state.visibleDcm
     const visibleMain = this.state.visibleMain
@@ -318,13 +351,12 @@ class App extends PureComponent {
     const visibleSettings = this.state.visibleSettings
     const visibleToolbar = this.state.visibleToolbar
     const visibleOpenUrl = this.state.visibleOpenUrl
-    //const visibleOpenUrlDlg = this.state.visibleOpenUrlDlg
-
-    const titleHeader = 'Dicom Header'
-    const closeBtn = <Button icon onClick={this.hideHeader}>{'close'}</Button>
-
-    //const numberOfFrames = this.props.numberOfFrames
-    //console.log('numberOfFrames: ', numberOfFrames)
+    const visibleMeasure = this.state.visibleMeasure
+    
+    const styleTitleToolbar = {
+      fontSize: '15px',
+      textAlign: 'left'
+  }
 
     const toolState = this.state.toolState === 1
 
@@ -344,10 +376,11 @@ class App extends PureComponent {
           style={{ display: visibleToolbar === true ? '' : 'none'}}
           nav={<Button icon onClick={this.showDrawer}>menu</Button>} 
           actions={[
-            this.props.tool !== null ? <Button icon primary={toolState} secondary={!toolState} onClick={this.toolChange}>{iconTool}</Button>: null,
-            this.props.numberOfFrames > 1 ? <Button icon onClick={this.cinePlayer}>videocam</Button>: null,
+            this.props.tool !== null &&  this.props.isOpen ? <Button icon primary={toolState} secondary={!toolState} onClick={this.toolChange}>{iconTool}</Button>: null,
+            this.props.numberOfFrames > 1 &&  this.props.isOpen ? <Button icon onClick={this.cinePlayer}>videocam</Button>: null,
             this.props.isOpen ? <Button icon primary onClick={this.resetImage}>refresh</Button> : null,
             this.props.isOpen ? <Button icon primary onClick={this.saveShot}>photo_camera</Button> : null,
+            this.props.isOpen ? <Button icon primary onClick={this.showMeasure}><Icon path={mdiFileCad} size={'1.5rem'} color={iconColor} /></Button> : null,
             this.props.isOpen ? <Button icon primary onClick={this.showHeader}><Icon path={mdiFileDocument} size={'1.5rem'} color={iconColor} /></Button> : null,
           ]}
         />
@@ -359,6 +392,7 @@ class App extends PureComponent {
           className="md-toolbar-relative md-grid"
         >
         </CSSTransitionGroup>
+
         <Drawer
           type={Drawer.DrawerTypes.TEMPORARY}
           visible={visibleMain}
@@ -376,6 +410,27 @@ class App extends PureComponent {
 
         <Drawer
           type={Drawer.DrawerTypes.TEMPORARY}
+          visible={visibleMeasure}
+          position='right'
+          onVisibilityChange={this.handleVisibilityMeasure}
+          renderNode={this.dialog}
+          navItems={this.props.measure.map((item, index) => <MeasureItem item={item} index={index} toolRemove={this.toolRemove} key={index} />)} 
+          header={(
+            <Toolbar
+              nav={<Button icon onClick={this.hideMeasure}>{'close'}</Button>}
+              actions={[
+                <Button icon primary onClick={this.saveMeasure}><Icon path={mdiContentSaveOutline} size={'1.5rem'} color={iconColor} /></Button>,
+                <Button icon primary onClick={this.clearMeasure}><Icon path={mdiTrashCanOutline} size={'1.5rem'} color={iconColor} /></Button>,
+              ]}
+              title={'Measures'}
+              titleStyle={styleTitleToolbar}
+              className="md-divider-border md-divider-border--bottom"
+            />
+          )}
+        />
+
+        <Drawer
+          type={Drawer.DrawerTypes.TEMPORARY}
           visible={visibleHeader}
           position='right'
           onVisibilityChange={this.handleVisibilityHeader}
@@ -383,11 +438,12 @@ class App extends PureComponent {
           navItems={this.props.header.map((item, index) => <HeaderItem name={item.name} value={item.value} key={index} />)} 
           header={(
             <Toolbar
-              nav={closeBtn}
+              nav={<Button icon onClick={this.hideHeader}>{'close'}</Button>}
               actions={[
                 <Button icon onClick={this.saveHeader}>save_alt</Button>,
               ]}
-              title={titleHeader}
+              title={'Dicom Header'}
+              titleStyle={styleTitleToolbar}
               className="md-divider-border md-divider-border--bottom"
             />
           )}
@@ -397,6 +453,17 @@ class App extends PureComponent {
         {visibleOpenUrl ? <OpenUrl onClose={this.hideOpenUrl}/>: null}
 
         <DicomViewer runTool={ref => (this.runTool = ref)} changeTool={ref => (this.changeTool = ref)} visible={visibleDcm} />
+
+        <DialogContainer
+          id="clear-measure-dialog"
+          visible={this.state.visibleClearMeasureDlg}
+          onHide={this.hideClearMeasureDlg}
+          actions={[
+            <Button flat secondary onClick={this.hideClearMeasureDlg}>No</Button>,
+            <Button flat primary onClick={() => this.confirmClearMeasureDlg()}>Yes</Button>,
+          ]}
+          title="Are you sure to remove all the measurements?"
+        />
       </div>
     );
   }
@@ -408,7 +475,8 @@ const mapStateToProps = (state) => {
     isOpen: state.isOpen,
     numberOfFrames: state.numberOfFrames,
     tool: state.tool,
-    header: state.header
+    header: state.header,
+    measure: state.measure
   }
 }
 

@@ -8,6 +8,9 @@ export const DCM_IS_OPEN = 'DCM_IS_OPEN'
 export const DCM_NUMBER_OF_FRAMES = 'DCM_NUMBER_OF_FRAMES'
 export const DCM_TOOL = 'DCM_TOOL'
 export const DCMDATA_STORE = 'DCMDATA_STORE'
+export const MEASURE_STORE = 'MEASURE_STORE'
+export const MEASURE_REMOVE = 'MEASURE_REMOVE'
+export const MEASURE_CLEAR = 'MEASURE_CLEAR'
 
 /*
  * action creators
@@ -24,13 +27,6 @@ export const loadUrl = (url) => {
     return { 
         type: LOAD_URL, 
         url: url 
-    }
-}
-
-export const dcmDataStore = (data) => {
-    return { 
-        type: DCMDATA_STORE, 
-        data: data 
     }
 }
 
@@ -52,5 +48,33 @@ export const dcmTool = (tool) => {
     return { 
         type: DCM_TOOL, 
         tool: tool 
+    }
+}
+
+export const dcmDataStore = (data) => {
+    return { 
+        type: DCMDATA_STORE, 
+        data: data 
+    }
+}
+
+
+export const measureStore = (measure) => {
+    return { 
+        type: MEASURE_STORE, 
+        measure: measure 
+    }
+}
+
+export const measureRemove = (index) => {
+    return { 
+        type: MEASURE_REMOVE, 
+        index: index 
+    }
+}
+
+export const measureClear = () => {
+    return { 
+        type: MEASURE_CLEAR, 
     }
 }

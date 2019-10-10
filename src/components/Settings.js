@@ -1,15 +1,41 @@
 import React from 'react'
 import { Button, Card, CardText, Checkbox, SelectionControlGroup, Toolbar } from 'react-md'
-import { getSettingsSaveAs, setSettingsSaveAs, getSettingsDcmHeader, setSettingsDcmHeader, getSettingsOverlay, setSettingsOverlay } from '../functions'
+import { getSettingsSaveAs, setSettingsSaveAs, 
+         getSettingsDcmHeader, setSettingsDcmHeader, 
+         getSettingsOverlay, setSettingsOverlay,
+         getSettingsMeasurement, setSettingsMeasurement } from '../functions'
 
 const style = { maxWidth: window.innerWidth-40 }
 
+const indexedDBsection = (isIndexedDB, measurement) => {
+  if (isIndexedDB) {
+    return(
+      <Card className="md-block-centered" style={style}>
+      <CardText>  
+        <Checkbox
+          id="checkbox-measurement"
+          name="checkbox-measurement[]"
+          label="Save Measurement"
+          defaultChecked={measurement === '1' ? true : false }
+          onChange= {(value) => {
+            measurement = value ? '1' : '0'   
+            setSettingsMeasurement(measurement)
+          }}
+        />
+      </CardText>
+    </Card>    
+    )
+  } else return
+}
 const Settings = ({ onClose }) => {
   
   let exportAs = getSettingsDcmHeader()
   let saveAs = getSettingsSaveAs()
   let overlay = getSettingsOverlay()
+  let measurement = getSettingsMeasurement()
 
+  const isIndexedDB = 'indexedDB' in window
+  
   return (
       <div>
         <Toolbar
@@ -65,13 +91,14 @@ const Settings = ({ onClose }) => {
               label="Overlay Information"
               defaultChecked={overlay === '1' ? true : false }
               onChange= {(value) => {
-                overlay = value ? '1' : '0' 
-                //localStorage.setItem(SETTINGS_OVERLAY, overlay)  
+                overlay = value ? '1' : '0'
                 setSettingsOverlay(overlay)
               }}
             />
           </CardText>
         </Card>
+        <br />     
+        { indexedDBsection(isIndexedDB, measurement) }
       </div>
   )
 }

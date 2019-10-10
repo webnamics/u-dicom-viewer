@@ -8,8 +8,6 @@ const HeaderItem = ({name, value}) => {
         textAlign: 'left'
     }
 
-    console.log('name, value: ', name, value)
-
     return (
         <ListItem
             primaryText={name}

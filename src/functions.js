@@ -1,4 +1,4 @@
-import { SETTINGS_SAVEAS, SETTINGS_DCMHEADER, SETTINGS_OVERLAY } from './constants/settings'
+import { SETTINGS_SAVEAS, SETTINGS_DCMHEADER, SETTINGS_OVERLAY, SETTINGS_MEASUREMENT } from './constants/settings'
 
 
 export function getSettingsSaveAs() {
@@ -36,6 +36,19 @@ export function getSettingsOverlay() {
 
 export function setSettingsOverlay(value) {
     localStorage.setItem(SETTINGS_OVERLAY, value)  
+}
+
+export function getSettingsMeasurement() {
+    let measurement = localStorage.getItem(SETTINGS_MEASUREMENT)
+    if (measurement === null) {
+        measurement = "1"
+      localStorage.setItem(SETTINGS_MEASUREMENT, measurement)
+    }
+    return measurement
+}
+
+export function setSettingsMeasurement(value) {
+    localStorage.setItem(SETTINGS_MEASUREMENT, value)  
 }
 
 

@@ -1,4 +1,4 @@
-import {LOAD_LOCALFILE, LOAD_URL, DCMDATA_STORE, DCM_IS_OPEN, DCM_NUMBER_OF_FRAMES, DCM_TOOL} from '../actions'
+import {LOAD_LOCALFILE, LOAD_URL, DCM_IS_OPEN, DCM_NUMBER_OF_FRAMES, DCM_TOOL, MEASURE_STORE, MEASURE_CLEAR, MEASURE_REMOVE, DCMDATA_STORE} from '../actions'
 
 export default function storeReducer(state={}, action) {
     switch(action.type) {
@@ -10,7 +10,8 @@ export default function storeReducer(state={}, action) {
           isOpen: false,
           numberOfFrames: 1,
           tool: null,
-          header: []
+          header: [],
+          measure: []
         }    
 
       case LOAD_URL:
@@ -20,8 +21,45 @@ export default function storeReducer(state={}, action) {
             isOpen: false,
             numberOfFrames: 1,
             tool: null,
-            header: []
+            header: [],
+            measure: []
           }    
+
+      case DCM_IS_OPEN:
+          return {
+            ...state,
+            isOpen: action.value,
+            header: [
+              ...state.header
+            ],
+            measure: [
+              ...state.measure
+            ]            
+          }    
+
+      case DCM_NUMBER_OF_FRAMES:
+          return {
+            ...state,
+            numberOfFrames: action.value,
+            header: [
+              ...state.header
+            ],
+            measure: [
+              ...state.measure
+            ]
+          }    
+
+      case DCM_TOOL:
+          return {
+              ...state,
+              tool: action.tool,
+              header: [
+                ...state.header
+              ],
+              measure: [
+                ...state.measure
+              ]  
+          }  
 
       case DCMDATA_STORE:
         const [name, value] = action.data
@@ -32,36 +70,43 @@ export default function storeReducer(state={}, action) {
           ...state,
           header: [
             ...state.header,
-            {'name': name, 'value': value},
+            { 'name': name, 'value': value },
           ],
         }   
 
-      case DCM_IS_OPEN:
-          return {
-            ...state,
-            isOpen: action.value,
-            header: [
-              ...state.header
-            ]
-          }    
+      case MEASURE_STORE:
+        return {
+          ...state,
+          header: [
+            ...state.header
+          ],          
+          measure: [
+            ...state.measure,
+            action.measure,
+          ],
+        }   
 
-      case DCM_NUMBER_OF_FRAMES:
-          return {
-            ...state,
-            numberOfFrames: action.value,
-            header: [
-              ...state.header
-            ]
-          }    
+      case MEASURE_REMOVE:
+        let measure = [...state.measure]
+        measure.splice(action.index, 1)
+        return {
+          ...state,
+          header: [
+            ...state.header
+          ],          
+          measure: [
+            ...measure,
+          ],
+        }   
 
-      case DCM_TOOL:
-          return {
+      case MEASURE_CLEAR:
+            return {
               ...state,
-              tool: action.tool,
               header: [
                 ...state.header
-              ]
-          }  
+              ],          
+              measure: [],
+            }  
 
       default:
           return state

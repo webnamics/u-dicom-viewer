@@ -7,7 +7,8 @@ let initialState = {
     isOpen: false,
     numberOfFrames: 1,
     tool: null,
-    header: []
+    header: [],
+    measure: []
 }
 
 const store = createStore(storeReducer, initialState,
