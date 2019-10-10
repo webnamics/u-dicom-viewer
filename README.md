@@ -1,11 +1,49 @@
 <div align="center">
   <h1>Universal Dicom Viewer</h1>
-  <p>A simple web browser DICOM viewer for any device.</p>
+  <p>A simple web browser DICOM viewer for any device, https://webnamics.github.io/u-dicom-viewer.</p>
 </div>
 
 <div align="center">
-  <a href="https://webnamics.github.io/u-dicom-viewer/">Live Demo</a>
+	<a href="https://webnamics.github.io/u-dicom-viewer/">Live Demo</a>
 </div>
+
+<hr />
+This software can only be used as a reviewing or scientific software and cannot be used as a medical device for primary diagnostic or any other clinical practice. 
+
+Universal Dicom Viewer or UDV is a simple but functional DICOM viewer for any device with a web browser, it allows to open and view 2D medical images in a wide variety of DICOM formats. 
+
+<h2><a id="user-content-acknowledgments" class="anchor" aria-hidden="true" href="#acknowledgments"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Key features</h2>
+<ul>
+	<li>Open medical images in DICOM format from local and URL.</li> 
+	<li>Window width and window center control for DICOM images.</li>
+	<li>Zooming and panning images.</li> 
+	<li>Measurement tools with annotation field.</li>
+	<li>Measurement tools for length, area and angle, elliptical and rectangle ROI.</li>
+	<li>Persistence of measurement tools (stored in IndexedDB of web browser).</li>
+	<li>Cine view with control functions.</li>
+	<li>Displaying DICOM attributes of image.</li>
+	<li>Save DICOM attributes as JSON or CSV file.</li>
+	<li>Save screenshot in JPEG or PNG format.</li>
+</ul>
+
+<h2><a id="user-content-acknowledgments" class="anchor" aria-hidden="true" href="#acknowledgments"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Acknowledgments</h2>
+<p>UDV uses:</p>
+<ul>
+	<li><a href="https://github.com/cornerstonejs/cornerstone">Cornerstone Core</a>, complete web based medical imaging platform.</li>
+	<li><a href="https://github.com/cornerstonejs/cornerstoneTools">CornerstoneTools</a>, library of common tools that can be used with Cornerstone.</li>
+	<li><a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader">CornerstoneWADOImageLoader</a>, Cornerstone Image Loader that works with WADO-URI, WADO-RS and DICOM P10 files</li>
+	<li><a href="https://github.com/cornerstonejs/cornerstoneWebImageLoader">CornerstoneWebImageLoader</a>, Cornerstone Image Loader that works with PNG and JPEG files.</li>
+	<li><a href="https://github.com/cornerstonejs/dicomParser">dicomParser</a>, JavaScript library designed to parse DICOM for web browsers.</li>
+	<li><a href="https://github.com/rii-mango/Daikon">Daikon</a>, pure JavaScript DICOM reader.</li>
+</ul>
+<p>As well as the following third-party libraries:</p>
+<ul>
+	<li><a href="https://github.com/dfahlander/Dexie.js/">Dexie.js</a>, wrapper library for indexedDB - the standard database in the browser.</li>
+	<li><a href="https://github.com/duskload/react-device-detect">react-device-detect</a>, detect device, and render view according to detected device type.</li>
+	<li><a href="https://github.com/mlaursen/react-md">react-md</a>, React Material Design - React components built with sass.</li>
+	<li><a href="https://github.com/hammerjs/hammer.js/tree/master">hammer.js</a>, JavaScript library for detecting touch gestures.</li>	
+</ul>
+
 
 <hr />
 
