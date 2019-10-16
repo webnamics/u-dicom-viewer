@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "d167ccad52b61cefa996f7c2faa9193e",
+    "revision": "3d8c63007ff77f2488eaf821cd5590ed",
     "url": "/u-dicom-viewer/index.html"
   },
   {
