@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/u-dicom-viewer/static/css/main.c1dd006c.chunk.css",
-    "main.js": "/u-dicom-viewer/static/js/main.a137a19a.chunk.js",
-    "main.js.map": "/u-dicom-viewer/static/js/main.a137a19a.chunk.js.map",
+    "main.js": "/u-dicom-viewer/static/js/main.c7121a2c.chunk.js",
+    "main.js.map": "/u-dicom-viewer/static/js/main.c7121a2c.chunk.js.map",
     "runtime~main.js": "/u-dicom-viewer/static/js/runtime~main.702313a8.js",
     "runtime~main.js.map": "/u-dicom-viewer/static/js/runtime~main.702313a8.js.map",
-    "static/js/2.b145f68e.chunk.js": "/u-dicom-viewer/static/js/2.b145f68e.chunk.js",
-    "static/js/2.b145f68e.chunk.js.map": "/u-dicom-viewer/static/js/2.b145f68e.chunk.js.map",
+    "static/js/2.62af1565.chunk.js": "/u-dicom-viewer/static/js/2.62af1565.chunk.js",
+    "static/js/2.62af1565.chunk.js.map": "/u-dicom-viewer/static/js/2.62af1565.chunk.js.map",
     "index.html": "/u-dicom-viewer/index.html",
-    "precache-manifest.8296bc30a5e9aaceec881c50be098840.js": "/u-dicom-viewer/precache-manifest.8296bc30a5e9aaceec881c50be098840.js",
+    "precache-manifest.b8aac10fd69de7d0f3dfaab63aa6272f.js": "/u-dicom-viewer/precache-manifest.b8aac10fd69de7d0f3dfaab63aa6272f.js",
     "service-worker.js": "/u-dicom-viewer/service-worker.js",
     "static/css/main.c1dd006c.chunk.css.map": "/u-dicom-viewer/static/css/main.c1dd006c.chunk.css.map"
   }
