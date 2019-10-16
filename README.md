@@ -18,7 +18,7 @@
 	<li>Window width and window center control for DICOM images.</li>
 	<li>Zooming and panning images.</li> 
 	<li>Measurement tools with annotation field.</li>
-	<li>Measurement tools for length, area and angle, elliptical and rectangle ROI.</li>
+	<li>Measurement tools for length, area and angle, elliptical, rectangle and Freehand ROI.</li>
 	<li>Persistence of measurement tools (stored in IndexedDB of web browser).</li>
 	<li>Cine view with control functions.</li>
 	<li>Displaying DICOM attributes of image.</li>

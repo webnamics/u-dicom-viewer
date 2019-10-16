@@ -34,7 +34,7 @@ const Settings = ({ onClose }) => {
   let overlay = getSettingsOverlay()
   let measurement = getSettingsMeasurement()
 
-  const isIndexedDB = 'indexedDB' in window
+  const isIndexedDB = false // 'indexedDB' in window
   
   return (
       <div>

@@ -7,7 +7,7 @@ import * as cornerstoneWebImageLoader from "cornerstone-web-image-loader";
 import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 import * as dicomParser from 'dicom-parser'
 import {connect} from 'react-redux'
-import {loadLocalfile, loadUrl, dcmIsOpen, dcmNumberOfFrames, dcmTool, dcmDataStore, measureStore, measureRemove, measureClear} from '../actions'
+import {clearStore, loadLocalfile, loadUrl, dcmIsOpen, dcmNumberOfFrames, dcmTool, dcmDataStore, measureStore, measureRemove, measureClear} from '../actions'
 //import {black} from "ansi-colors";
 import {uids} from '../constants/uids'
 import { SETTINGS_SAVEAS } from '../constants/settings'
@@ -358,7 +358,7 @@ class DicomViewer extends React.Component {
         const ProbeTool = cornerstoneTools.ProbeTool
         const EllipticalRoiTool = cornerstoneTools.EllipticalRoiTool
         const RectangleRoiTool = cornerstoneTools.RectangleRoiTool
-        //const FreehandRoiTool = cornerstoneTools.FreehandRoiTool
+        const FreehandRoiTool = cornerstoneTools.FreehandRoiTool
         const AngleTool = cornerstoneTools.AngleTool
         const MagnifyTool = cornerstoneTools.MagnifyTool
         const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
@@ -373,7 +373,7 @@ class DicomViewer extends React.Component {
         cornerstoneTools.addTool(ProbeTool)
         cornerstoneTools.addTool(EllipticalRoiTool)
         cornerstoneTools.addTool(RectangleRoiTool)
-        //cornerstoneTools.addTool(FreehandRoiTool)
+        cornerstoneTools.addTool(FreehandRoiTool)
         cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
         if (nFrames > 1) {
@@ -432,12 +432,15 @@ class DicomViewer extends React.Component {
             break                 
         }
         case 'clear': {
-          this.props.isOpenStore(false)
-          this.props.numberOfFramesStore(1)
+          //this.props.isOpenStore(false)
+          //this.props.numberOfFramesStore(1)
+          this.props.clearingStore()
           cornerstone.disable(this.dicomImage)
           break
         }  
         case 'notool': {
+          this.disableAllTools()
+
           //const element = this.dicomImage
 
           //cornerstoneTools.clearToolState(element, 'Length')
@@ -542,7 +545,7 @@ class DicomViewer extends React.Component {
           cornerstoneTools.setToolActive('Magnify', { mouseButtonMask: 1 })
           break  
         }
-        case 'FreeformRoi': {
+        case 'FreehandRoi': {
           cornerstoneTools.setToolActive('FreehandRoi', { mouseButtonMask: 1 })
           break 
         }
@@ -835,6 +838,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
+    clearingStore: () => dispatch(clearStore()),
     localfileStore: (file) => dispatch(loadLocalfile(file)),
     isOpenStore: (value) => dispatch(dcmIsOpen(value)),
     numberOfFramesStore: (value) => dispatch(dcmNumberOfFrames(value)),

@@ -44,7 +44,7 @@ class App extends PureComponent {
     }, {
       key: 'openurl',
       primaryText: 'Open URL ...',
-      leftIcon: <FontIcon>cloud</FontIcon>,
+      leftIcon: <FontIcon>language</FontIcon>,
       onClick: () => {this.showOpenUrl()},
     }, {
       key: 'clear',
@@ -137,7 +137,7 @@ class App extends PureComponent {
         iconTool = 'branding_watermark'
         this.toolExecute('RectangleRoi')
       },
-    }, /*{      
+    }, {      
       key: 'FreehandRoi',
       primaryText: 'Freehand',
       leftIcon: <FontIcon>gesture</FontIcon>,
@@ -145,7 +145,7 @@ class App extends PureComponent {
         iconTool = 'gesture'
         this.toolExecute('FreehandRoi')
       },
-    }*/
+    }
   ]
 
   menuListSetting = [

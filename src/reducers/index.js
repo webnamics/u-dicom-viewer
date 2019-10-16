@@ -1,9 +1,20 @@
-import {LOAD_LOCALFILE, LOAD_URL, DCM_IS_OPEN, DCM_NUMBER_OF_FRAMES, DCM_TOOL, MEASURE_STORE, MEASURE_CLEAR, MEASURE_REMOVE, DCMDATA_STORE} from '../actions'
+import {CLEAR_STORE, LOAD_LOCALFILE, LOAD_URL, DCM_IS_OPEN, DCM_NUMBER_OF_FRAMES, DCM_TOOL, MEASURE_STORE, MEASURE_CLEAR, MEASURE_REMOVE, DCMDATA_STORE} from '../actions'
 
 export default function storeReducer(state={}, action) {
     switch(action.type) {
+      
+      case CLEAR_STORE:
+        return {
+          localfile: null,
+          url: null,
+          isOpen: false,
+          numberOfFrames: 1,
+          tool: null,
+          header: [],
+          measure: []
+        }    
+
       case LOAD_LOCALFILE:
-        //console.log('storeReducer - LOAD_LOCALFILE: ', action.localfile)
         return {
           localfile: action.localfile,
           url: null,

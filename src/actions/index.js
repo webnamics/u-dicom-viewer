@@ -2,6 +2,7 @@
  * action types
  */
 
+export const CLEAR_STORE = 'CLEAR_STORE'
 export const LOAD_LOCALFILE = 'LOAD_LOCALFILE'
 export const LOAD_URL = 'LOAD_URL'
 export const DCM_IS_OPEN = 'DCM_IS_OPEN'
@@ -15,6 +16,12 @@ export const MEASURE_CLEAR = 'MEASURE_CLEAR'
 /*
  * action creators
  */
+
+export const clearStore = () => {
+    return { 
+        type: CLEAR_STORE, 
+    }
+}
 
 export const loadLocalfile = (file) => {
     return { 

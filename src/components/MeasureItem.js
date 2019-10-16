@@ -85,7 +85,15 @@ class MeasureItem extends PureComponent {
                     <       div> SD: {item.data.cachedStats.stdDev.toFixed(2)} {item.data.unit} </div>
                         </div>
                 sText = item.note
-                break                      
+                break          
+            case 'FreehandRoi':
+                pText = <div>
+                            <div> A: {item.data.area.toFixed(2)} mm² </div>
+                            <div> M: {item.data.meanStdDev.mean.toFixed(2)} {item.data.unit} </div>
+                    <       div> SD: {item.data.meanStdDev.stdDev.toFixed(2)} {item.data.unit} </div>
+                        </div>
+                sText = item.note
+                break                                  
             default:
                 break    
         }
