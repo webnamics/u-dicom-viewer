@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/u-dicom-viewer/static/css/main.c1dd006c.chunk.css",
-    "main.js": "/u-dicom-viewer/static/js/main.c7121a2c.chunk.js",
-    "main.js.map": "/u-dicom-viewer/static/js/main.c7121a2c.chunk.js.map",
-    "runtime~main.js": "/u-dicom-viewer/static/js/runtime~main.702313a8.js",
-    "runtime~main.js.map": "/u-dicom-viewer/static/js/runtime~main.702313a8.js.map",
-    "static/js/2.62af1565.chunk.js": "/u-dicom-viewer/static/js/2.62af1565.chunk.js",
-    "static/js/2.62af1565.chunk.js.map": "/u-dicom-viewer/static/js/2.62af1565.chunk.js.map",
+    "main.js": "/u-dicom-viewer/static/js/main.984a3710.chunk.js",
+    "main.js.map": "/u-dicom-viewer/static/js/main.984a3710.chunk.js.map",
+    "runtime~main.js": "/u-dicom-viewer/static/js/runtime~main.1d2b3dcf.js",
+    "runtime~main.js.map": "/u-dicom-viewer/static/js/runtime~main.1d2b3dcf.js.map",
+    "static/js/2.ba9db4ae.chunk.js": "/u-dicom-viewer/static/js/2.ba9db4ae.chunk.js",
+    "static/js/2.ba9db4ae.chunk.js.map": "/u-dicom-viewer/static/js/2.ba9db4ae.chunk.js.map",
     "index.html": "/u-dicom-viewer/index.html",
-    "precache-manifest.bfb9cea2df7e16a0ded59d954d6a3ff8.js": "/u-dicom-viewer/precache-manifest.bfb9cea2df7e16a0ded59d954d6a3ff8.js",
+    "precache-manifest.6d798ca7ec3f7d41fac4cc4e2f5872d0.js": "/u-dicom-viewer/precache-manifest.6d798ca7ec3f7d41fac4cc4e2f5872d0.js",
     "service-worker.js": "/u-dicom-viewer/service-worker.js",
     "static/css/main.c1dd006c.chunk.css.map": "/u-dicom-viewer/static/css/main.c1dd006c.chunk.css.map"
   }
