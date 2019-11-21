@@ -1,5 +1,25 @@
-import { SETTINGS_SAVEAS, SETTINGS_DCMHEADER, SETTINGS_OVERLAY, SETTINGS_MEASUREMENT } from './constants/settings'
+import { 
+    SETTINGS_SAVEAS, 
+    SETTINGS_DCMHEADER, 
+    SETTINGS_OVERLAY, 
+    SETTINGS_MEASUREMENT
+} from './constants/settings'
 
+export function log() {
+    let log = localStorage.getItem('debug-u-dicom-viewer')
+    if (log === null) {
+        console.log = function(){}
+    }
+}
+
+export function isUrlImage(url) {
+    return(url.match(/\.(jpeg|jpg|png)$/) != null)
+}
+
+export function isFileImage(file) {
+    const acceptedImageTypes = ['image/jpeg', 'image/png'] // 'image/gif', 
+    return file && acceptedImageTypes.includes(file['type'])
+}
 
 export function getSettingsSaveAs() {
     let saveAs = localStorage.getItem(SETTINGS_SAVEAS)
@@ -7,6 +27,7 @@ export function getSettingsSaveAs() {
       saveAs = "png"
       localStorage.setItem(SETTINGS_SAVEAS, saveAs)
     }
+    return saveAs
 }
 
 export function setSettingsSaveAs(value) {
@@ -19,6 +40,7 @@ export function getSettingsDcmHeader() {
       exportAs = "json"
       localStorage.setItem(SETTINGS_DCMHEADER, exportAs)
     }  
+    return exportAs
 }
 
 export function setSettingsDcmHeader(value) {
@@ -31,11 +53,11 @@ export function getSettingsOverlay() {
       overlay = "1"
       localStorage.setItem(SETTINGS_OVERLAY, overlay)
     }
-    return overlay
+    return overlay === '1'
 }
 
 export function setSettingsOverlay(value) {
-    localStorage.setItem(SETTINGS_OVERLAY, value)  
+    localStorage.setItem(SETTINGS_OVERLAY, value ? '1' : '0')  
 }
 
 export function getSettingsMeasurement() {

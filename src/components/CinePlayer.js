@@ -1,5 +1,18 @@
 import React, { PureComponent } from 'react'
-import { Button } from 'react-md'
+import Icon from '@mdi/react'
+//import { Button } from 'react-md'
+import IconButton from '@material-ui/core/IconButton'
+
+import { 
+    mdiPlay,
+    mdiPause,
+    mdiSkipBackward,
+    mdiSkipForward,
+    mdiSkipNext,
+    mdiSkipPrevious,
+  } from '@mdi/js'
+
+const iconColor = '#FFFFFF'
 
 class CinePlayer extends PureComponent {
     firstframe = () => {
@@ -29,17 +42,29 @@ class CinePlayer extends PureComponent {
     render() {
         let play = null
         if (!this.props.inPlay) {
-            play = <Button icon onClick={this.play} >play_arrow</Button>
+            play = <IconButton onClick={this.play}>
+                        <Icon path={mdiPlay} size={'1.5rem'} color={iconColor} />
+                   </IconButton>          
         } else {
-            play = <Button icon onClick={this.pause} >pause</Button>
+            play = <IconButton onClick={this.pause}>
+                        <Icon path={mdiPause} size={'1.5rem'} color={iconColor} />
+                   </IconButton>  
         }
         return (
             <div style={{ width:240, margin:'0 auto' }}>
-                <Button icon onClick={this.firstframe} >skip_previous</Button>
-                <Button icon onClick={this.previousframe} >fast_rewind</Button>
+                <IconButton onClick={this.firstframe}>
+                    <Icon path={mdiSkipBackward} size={'1.5rem'} color={iconColor} />
+                </IconButton>
+                <IconButton onClick={this.previousframe}>
+                    <Icon path={mdiSkipPrevious} size={'1.5rem'} color={iconColor} />
+                </IconButton>
                 {play}
-                <Button icon onClick={this.nextframe} >fast_forward</Button>
-                <Button icon onClick={this.lastframe} >skip_next</Button>
+                <IconButton onClick={this.nextframe}>
+                    <Icon path={mdiSkipNext} size={'1.5rem'} color={iconColor} />
+                </IconButton>
+                <IconButton onClick={this.lastframe}>
+                    <Icon path={mdiSkipForward} size={'1.5rem'} color={iconColor} />
+                </IconButton>
             </div>
         )
     }

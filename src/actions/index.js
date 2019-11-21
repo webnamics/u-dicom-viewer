@@ -8,6 +8,7 @@ export const LOAD_URL = 'LOAD_URL'
 export const DCM_IS_OPEN = 'DCM_IS_OPEN'
 export const DCM_NUMBER_OF_FRAMES = 'DCM_NUMBER_OF_FRAMES'
 export const DCM_TOOL = 'DCM_TOOL'
+export const DCM_IMAGE = 'DCM_IMAGE'
 export const DCMDATA_STORE = 'DCMDATA_STORE'
 export const MEASURE_STORE = 'MEASURE_STORE'
 export const MEASURE_REMOVE = 'MEASURE_REMOVE'
@@ -55,6 +56,13 @@ export const dcmTool = (tool) => {
     return { 
         type: DCM_TOOL, 
         tool: tool 
+    }
+}
+
+export const dcmImage = (image) => {
+    return { 
+        type: DCM_IMAGE, 
+        images: image 
     }
 }
 

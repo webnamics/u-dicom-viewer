@@ -6,6 +6,7 @@ import * as serviceWorker from './serviceWorker';
 import WebFontLoader from 'webfontloader';
 import {Provider} from 'react-redux'
 import store from './store'
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles'
 
 WebFontLoader.load({
     google: {
@@ -15,9 +16,24 @@ WebFontLoader.load({
 
 store.subscribe(() => console.log('store updated:', store.getState()));
 
+const theme = createMuiTheme({
+    palette: {
+        primary: {
+            main: '#004d40',
+        },
+        secondary: {
+            main: '#888888',
+        },
+        type: 'dark',
+    },
+  })
+
+  
 ReactDOM.render(
     <Provider store={store}>
-        <App />
+        <MuiThemeProvider theme = { theme }>
+            <App />
+        </MuiThemeProvider>
     </Provider>, 
     document.getElementById('root')
 );

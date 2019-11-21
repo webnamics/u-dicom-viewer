@@ -1,4 +1,16 @@
-import {CLEAR_STORE, LOAD_LOCALFILE, LOAD_URL, DCM_IS_OPEN, DCM_NUMBER_OF_FRAMES, DCM_TOOL, MEASURE_STORE, MEASURE_CLEAR, MEASURE_REMOVE, DCMDATA_STORE} from '../actions'
+import {
+  CLEAR_STORE, 
+  LOAD_LOCALFILE, 
+  LOAD_URL, 
+  DCM_IS_OPEN, 
+  DCM_NUMBER_OF_FRAMES, 
+  DCM_TOOL, 
+  DCM_IMAGE,
+  MEASURE_STORE, 
+  MEASURE_CLEAR, 
+  MEASURE_REMOVE, 
+  DCMDATA_STORE
+} from '../actions'
 
 export default function storeReducer(state={}, action) {
     switch(action.type) {
@@ -10,6 +22,7 @@ export default function storeReducer(state={}, action) {
           isOpen: false,
           numberOfFrames: 1,
           tool: null,
+          images: [],
           header: [],
           measure: []
         }    
@@ -21,6 +34,7 @@ export default function storeReducer(state={}, action) {
           isOpen: false,
           numberOfFrames: 1,
           tool: null,
+          images: [],
           header: [],
           measure: []
         }    
@@ -32,6 +46,7 @@ export default function storeReducer(state={}, action) {
             isOpen: false,
             numberOfFrames: 1,
             tool: null,
+            images: [],
             header: [],
             measure: []
           }    
@@ -40,6 +55,9 @@ export default function storeReducer(state={}, action) {
           return {
             ...state,
             isOpen: action.value,
+            images: [
+              ...state.images
+            ],            
             header: [
               ...state.header
             ],
@@ -52,6 +70,9 @@ export default function storeReducer(state={}, action) {
           return {
             ...state,
             numberOfFrames: action.value,
+            images: [
+              ...state.images
+            ],  
             header: [
               ...state.header
             ],
@@ -64,6 +85,9 @@ export default function storeReducer(state={}, action) {
           return {
               ...state,
               tool: action.tool,
+              images: [
+                ...state.images
+              ],  
               header: [
                 ...state.header
               ],
@@ -71,6 +95,21 @@ export default function storeReducer(state={}, action) {
                 ...state.measure
               ]  
           }  
+
+      case DCM_IMAGE:
+          return {
+              ...state,
+              images: [
+                ...state.images,
+                action.images,
+              ],  
+              header: [
+                ...state.header
+              ],
+              measure: [
+                ...state.measure
+              ]  
+          } 
 
       case DCMDATA_STORE:
         const [name, value] = action.data
@@ -88,6 +127,9 @@ export default function storeReducer(state={}, action) {
       case MEASURE_STORE:
         return {
           ...state,
+          images: [
+            ...state.images
+          ],
           header: [
             ...state.header
           ],          
@@ -102,6 +144,9 @@ export default function storeReducer(state={}, action) {
         measure.splice(action.index, 1)
         return {
           ...state,
+          images: [
+            ...state.images
+          ],
           header: [
             ...state.header
           ],          
@@ -113,6 +158,9 @@ export default function storeReducer(state={}, action) {
       case MEASURE_CLEAR:
             return {
               ...state,
+              images: [
+                ...state.images
+              ],
               header: [
                 ...state.header
               ],          

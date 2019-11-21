@@ -7,6 +7,7 @@ let initialState = {
     isOpen: false,
     numberOfFrames: 1,
     tool: null,
+    images: [],
     header: [],
     measure: []
 }

@@ -1,20 +1,12 @@
 import React from 'react'
-import { ListItem } from 'react-md'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 const HeaderItem = ({name, value}) => {
-    
-    const pStyle = {
-        fontSize: '12px',
-        textAlign: 'left'
-    }
-
     return (
-        <ListItem
-            primaryText={name}
-            secondaryText={value}
-            threeLines={value.length > 30}
-            secondaryTextStyle={pStyle}
-        />
+        <ListItem dense={true}>
+            <ListItemText primary={name} secondary={value} />
+        </ListItem>  
     )
 }
   

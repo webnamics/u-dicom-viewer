@@ -1,22 +1,29 @@
 import React, { PureComponent } from 'react'
-import { Button, DialogContainer, ListItem, TextField } from 'react-md'
+import Button from '@material-ui/core/Button'
+import CreateIcon from '@material-ui/icons/Create'
+import DeleteIcon from '@material-ui/icons/Delete'
+import Dialog from '@material-ui/core/Dialog'
+import DialogActions from '@material-ui/core/DialogActions'
+import DialogContent from '@material-ui/core/DialogContent'
+import DialogTitle from '@material-ui/core/DialogTitle'
+import IconButton from '@material-ui/core/IconButton'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
+import TextField from '@material-ui/core/TextField'
+import Toolbar from '@material-ui/core/Toolbar'
 import {connect} from 'react-redux'
-
-const pStyle = {
-    fontSize: '13px',
-    textAlign: 'left'
-}
-
-const sStyle = {
-    fontSize: '12px',
-    textAlign: 'left'
-}
 
 class MeasureItem extends PureComponent {
 
+    constructor(props) {
+        super(props)
+        this.noteField = React.createRef()
+    
+      }
+
     state = { 
         visibleDlgNote: false,
-        visibleDlgDelete: false
+        visibleDlgDelete: false,
     }
 
     showDlgNote = () => {
@@ -35,10 +42,13 @@ class MeasureItem extends PureComponent {
         this.setState({ visibleDlgDelete: false })
     }
 
+    handleOnChangeNote = event => {
+        this.setState({ note: event.target.value })
+    }
+
     confirmNote = (index) => {
         this.hideDlgNote()
-        let note = this.refs.noteField.value
-        this.props.measure[index].note = note
+        this.props.measure[index].note = this.noteField.value
     }   
 
     confirmDelete = (index) => {
@@ -53,7 +63,6 @@ class MeasureItem extends PureComponent {
     onDelete = () => {
         this.showDlgDelete()
     }
-    
     
     render() {    
         let item = this.props.item
@@ -100,45 +109,60 @@ class MeasureItem extends PureComponent {
 
         return (
             <div>
-                <ListItem 
-                    primaryText={pText}
-                    secondaryText={sText}
-                    threeLines
-                    primaryTextStyle={pStyle}
-                    secondaryTextStyle={sStyle}
-                    renderChildrenOutside
-                >
-                    <Button icon primary onClick={() => this.onEdit(index)}>edit</Button>
-                    <Button icon primary onClick={() => this.onDelete(index)}>delete</Button>
+                <ListItem>
+                    <ListItemText primary={pText} secondary={sText} />
+                    <Toolbar>
+                        <IconButton edge="end" onClick={() => this.onEdit(index)}>
+                            <CreateIcon />
+                        </IconButton>
+                        <IconButton edge="end" onClick={() => this.onDelete(index)}>
+                            <DeleteIcon />
+                        </IconButton>
+                    </Toolbar>
                 </ListItem>
-                <DialogContainer
-                    id="note-dialog"
-                    visible={this.state.visibleDlgNote}
-                    onHide={this.hideDlgNote}
-                    actions={[
-                        <Button flat secondary onClick={this.hideDlgNote}>Cancel</Button>,
-                        <Button flat primary onClick={() => this.confirmNote(index)}>Confirm</Button>,
-                    ]}
-                    title="Note for measurement"
+
+                <Dialog
+                    open={this.state.visibleDlgNote}
+                    onClose={this.hideDlgNote}
+                    aria-labelledby="form-dialog-title"
                 >
-                    <TextField
-                        id="note-dialog-field"
-                        ref="noteField"
-                        label=""
-                        placeholder=""
-                        defaultValue=""
-                    />
-                </DialogContainer>
-                <DialogContainer
-                    id="delete-dialog"
-                    visible={this.state.visibleDlgDelete}
-                    onHide={this.hideDlgDelete}
-                    actions={[
-                        <Button flat secondary onClick={this.hideDlgDelete}>No</Button>,
-                        <Button flat primary onClick={() => this.confirmDelete(index)}>Yes</Button>,
-                    ]}
-                    title="Are you sure to delete the measurement?"
-                />
+                    <DialogTitle id="form-dialog-title">{"Note for measurement:"}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            ref="noteField"
+                            autoFocus
+                            margin="dense"
+                            id="note"
+                            fullWidth
+                            defaultValue={this.props.measure[index].note}
+                            inputRef={input => (this.noteField = input)}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.hideDlgNote} >
+                            Cancel
+                        </Button>
+                        <Button onClick={() => this.confirmNote(index)} autoFocus>
+                            Ok
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    open={this.state.visibleDlgDelete}
+                    onClose={this.hideDlgNote}
+                    aria-labelledby="alert-dialog-title"
+                >
+                    <DialogTitle id="alert-dialog-title">{"Are you sure to delete the measurement?"}</DialogTitle>
+                    <DialogActions>
+                        <Button onClick={this.hideDlgDelete}>
+                            Cancel
+                        </Button>
+                        <Button onClick={() => this.confirmDelete(index)} autoFocus>
+                            Ok
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         )
     }
