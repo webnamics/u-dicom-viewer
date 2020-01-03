@@ -1,22 +1,11 @@
-/*
- * action types
- */
-
 export const CLEAR_STORE = 'CLEAR_STORE'
-export const LOAD_LOCALFILE = 'LOAD_LOCALFILE'
-export const LOAD_URL = 'LOAD_URL'
 export const DCM_IS_OPEN = 'DCM_IS_OPEN'
-export const DCM_NUMBER_OF_FRAMES = 'DCM_NUMBER_OF_FRAMES'
 export const DCM_TOOL = 'DCM_TOOL'
+export const ACTIVE_DCM_INDEX = 'ACTIVE_DCM_INDEX'
+export const ACTIVE_DCM = 'ACTIVE_DCM'
 export const DCM_IMAGE = 'DCM_IMAGE'
-export const DCMDATA_STORE = 'DCMDATA_STORE'
-export const MEASURE_STORE = 'MEASURE_STORE'
-export const MEASURE_REMOVE = 'MEASURE_REMOVE'
-export const MEASURE_CLEAR = 'MEASURE_CLEAR'
-
-/*
- * action creators
- */
+export const ACTIVE_MEASUREMENTS = 'ACTIVE_MEASUREMENTS'
+export const LAYOUT = 'LAYOUT'
 
 export const clearStore = () => {
     return { 
@@ -24,31 +13,10 @@ export const clearStore = () => {
     }
 }
 
-export const loadLocalfile = (file) => {
-    return { 
-        type: LOAD_LOCALFILE, 
-        localfile: file 
-    }
-}
-
-export const loadUrl = (url) => {
-    return { 
-        type: LOAD_URL, 
-        url: url 
-    }
-}
-
 export const dcmIsOpen = (value) => {
     return { 
         type: DCM_IS_OPEN, 
-        value: value 
-    }
-}
-
-export const dcmNumberOfFrames = (value) => {
-    return { 
-        type: DCM_NUMBER_OF_FRAMES, 
-        value: value 
+        value: value
     }
 }
 
@@ -59,6 +27,20 @@ export const dcmTool = (tool) => {
     }
 }
 
+export const activeDcmIndex = (index) => {
+    return { 
+        type: ACTIVE_DCM_INDEX, 
+        activeDcmIndex: index 
+    }
+}
+
+export const activeDcm = (dcm) => {
+    return { 
+        type: ACTIVE_DCM, 
+        activeDcm: dcm 
+    }
+}
+
 export const dcmImage = (image) => {
     return { 
         type: DCM_IMAGE, 
@@ -66,30 +48,16 @@ export const dcmImage = (image) => {
     }
 }
 
-export const dcmDataStore = (data) => {
+export const activeMeasurements = (measurements) => {
     return { 
-        type: DCMDATA_STORE, 
-        data: data 
+        type: ACTIVE_MEASUREMENTS, 
+        measurements: measurements 
     }
 }
 
-
-export const measureStore = (measure) => {
+export const setLayout = (row, col) => {
     return { 
-        type: MEASURE_STORE, 
-        measure: measure 
-    }
-}
-
-export const measureRemove = (index) => {
-    return { 
-        type: MEASURE_REMOVE, 
-        index: index 
-    }
-}
-
-export const measureClear = () => {
-    return { 
-        type: MEASURE_CLEAR, 
+        type: LAYOUT, 
+        layout: [row, col]
     }
 }

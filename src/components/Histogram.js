@@ -1,11 +1,9 @@
 import React, { PureComponent } from 'react'
-import Draggable from 'react-draggable'
-//import Button from '@material-ui/core/Button'
-import IconButton from '@material-ui/core/IconButton'
-//import Icon from '@material-ui/core/Icon'
+//import Draggable from 'react-draggable'
+//import IconButton from '@material-ui/core/IconButton'
 import Slider from '@material-ui/core/Slider'
-import HighlightOffIcon from '@material-ui/icons/HighlightOff'
-
+//import HighlightOffIcon from '@material-ui/icons/HighlightOff'
+import {connect} from 'react-redux'
 import * as cornerstone from 'cornerstone-core'
 import { import as csTools } from 'cornerstone-tools'
 
@@ -33,7 +31,7 @@ const styleCanvasGradient = {
 const styleTable = {
   borderCollapse: 'collapse',
   fontFamily: 'Courier, monospace',
-  fontSize: '80%',
+  fontSize: '67%',
   width: '100%',
 }
 
@@ -47,8 +45,6 @@ class Histogram extends PureComponent {
       super(props)
       this.canvasHistogram = React.createRef()
       this.canvasGradient = React.createRef()
-      this.pixelData = null
-
     }
 
     state = {
@@ -69,12 +65,17 @@ class Histogram extends PureComponent {
     }
 
     componentDidMount() {
-      this.pixelData = this.props.image.getPixelData()
+      //console.log('componentDidMount: ', this.props.activeDcmIndex)
+      this.image = this.props.activeDcm.image
+      this.element = this.props.activeDcm.element
+      this.isDicom = this.props.activeDcm.isDicom
+      this.pixelData = this.props.activeDcm.image.getPixelData()
       this.updateCanvas()  
     }
     
     componentDidUpdate() {
-      //this.updateCanvas()
+      //console.log('componentDidUpdate: ')
+      //this.updateCanvas() 
     }
 
     getMousePos(canvas, evt) {
@@ -86,7 +87,7 @@ class Histogram extends PureComponent {
     }
 
     getRGBPixelsImage(x, y, width, height) {
-      const image = this.props.image
+      //const image = this.props.image
       const storedPixelData = []
       x = Math.round(x)
       y = Math.round(y)   
@@ -95,7 +96,7 @@ class Histogram extends PureComponent {
     
       for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
-          spIndex = ((row + y) * image.rows + (column + x)) * 4
+          spIndex = ((row + y) * this.image.rows + (column + x)) * 4
           const red = this.pixelData[spIndex]
           const green = this.pixelData[spIndex + 1]
           const blue = this.pixelData[spIndex + 2]
@@ -112,15 +113,15 @@ class Histogram extends PureComponent {
     }
 
     getPixel(x, y) {
-      const image = this.props.image
-      const element = this.props.element
-      const isDicom = this.props.isDicom
+      //const image = this.props.image
+      //const element = this.props.element
+      //const isDicom = this.props.isDicom
       let sp = []
-      if (isDicom) {
-        if (image.color) {
-          sp = getRGBPixels(element, x, y, 1, 1)
+      if (this.isDicom) {
+        if (this.image.color) {
+          sp = getRGBPixels(this.element, x, y, 1, 1)
         } else {
-          sp = cornerstone.getStoredPixels(element, x, y, 1, 1)
+          sp = cornerstone.getStoredPixels(this.element, x, y, 1, 1)
         }
       } else {
         sp = this.getRGBPixelsImage(x, y, 1, 1)
@@ -129,7 +130,7 @@ class Histogram extends PureComponent {
     }
 
     updateCanvas() {
-      const image = this.props.image
+      const image = this.image
       //const element = this.props.element
       const maxPixelValue = image.maxPixelValue
       const minPixelValue = image.minPixelValue
@@ -147,20 +148,20 @@ class Histogram extends PureComponent {
       this.binSize = binSize
 
       //console.log('bitsStored: ', k)
-      console.log('minHist: ', minHist)
-      console.log('maxHist: ', maxHist)
-      console.log('lenHist: ', lenHist)
-      console.log('binSize: ', binSize)
-      console.log('zeroHist: ', zero256)
-      console.log('stepWW: ', stepWW)
-      console.log('stepWC: ', stepWC)
-      console.log('zero256-stepWW: ', zero256-stepWW)
-      console.log('zero256+stepWW: ', zero256+stepWW)   
-      console.log('image.color: ', image.color)  
-      console.log('isDicom: ', this.props.isDicom)  
-      console.log('pixelData: ', this.pixelData)
-      console.log('image.columns: ', image.columns)
-      console.log('image.rows: ', image.rows)
+      //console.log('minHist: ', minHist)
+      //console.log('maxHist: ', maxHist)
+      //console.log('lenHist: ', lenHist)
+      //console.log('binSize: ', binSize)
+      //console.log('zeroHist: ', zero256)
+      //console.log('stepWW: ', stepWW)
+      //console.log('stepWC: ', stepWC)
+      //console.log('zero256-stepWW: ', zero256-stepWW)
+      //console.log('zero256+stepWW: ', zero256+stepWW)   
+      //console.log('image.color: ', image.color)  
+      //console.log('isDicom: ', this.isDicom)  
+      //console.log('pixelData: ', this.pixelData)
+      //console.log('image.columns: ', image.columns)
+      //console.log('image.rows: ', image.rows)
 
       let m = 0 // the mean
 
@@ -300,71 +301,62 @@ class Histogram extends PureComponent {
 
     render() {  
       return (
-        <Draggable
-          handle="strong"
-          defaultPosition={{x: 20, y: 20}}
-          onStart={this.onStart}
-          onDrag={this.onDrag}
-          onStop={this.onStop}>
-          <div className="box no-cursor">
-            <strong className="cursor">
-              <div>
-                <IconButton edge="start" size="small" onClick={() => this.props.onClose()}>
-                  <HighlightOffIcon color="action" />
-                </IconButton>
-              </div>
-            </strong>
-            <div style={style}>
-              <div>
-                <canvas 
-                  ref={this.canvasHistogram} 
-                  width={HIST_WIDTH} 
-                  height={HIST_HEIGHT} 
-                  style={{backgroundColor: "#FFFFFF", cursor:'crosshair'}} 
-                />
-              </div>  
-              <div style={styleCanvasGradient}>
-                <canvas ref={this.canvasGradient} width={HIST_WIDTH} height={10} style={{backgroundColor: "#FFFFFF"}} />
-              </div>
-              <div style={styleSlider}>
-                <Slider
-                  value={this.state.value}
-                  onChange={this.handleChangeValue}
-                  aria-labelledby="continuous-slider"
-                  color="secondary"
-                  mix={0}
-                  max={255}
-                />
-              </div>
-              <div>
-                <table style={styleTable}>
-                  <tbody>
-                    <tr>
-                      <td style={styleTableTd}>min:</td>
-                      <td style={styleTableTd}>{this.state.minHist}</td>
-                      <td style={styleTableTd}>max:</td>
-                      <td style={styleTableTd}>{this.state.maxHist}</td>
-                    </tr>
-                    <tr>
-                      <td>mean:</td>
-                      <td>{parseFloat(this.state.mean).toFixed(3)}</td>
-                      <td>std dev:</td>
-                      <td>{parseFloat(this.state.stdDev).toFixed(3)}</td>
-                    </tr>
-                    <tr>
-                      <td>count:</td>
-                      <td>{this.state.histCount}</td>
-                      <td>value:</td>
-                      <td>{parseFloat(this.state.valueScale).toFixed(3)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <div style={style}>
+          <div>
+            <canvas 
+              ref={this.canvasHistogram} 
+              width={HIST_WIDTH} 
+              height={HIST_HEIGHT} 
+              style={{backgroundColor: "#FFFFFF", cursor:'crosshair'}} 
+            />
+          </div>  
+          <div style={styleCanvasGradient}>
+            <canvas ref={this.canvasGradient} width={HIST_WIDTH} height={10} style={{backgroundColor: "#FFFFFF"}} />
           </div>
-        </Draggable>
+          <div style={styleSlider}>
+            <Slider
+              value={this.state.value}
+              onChange={this.handleChangeValue}
+              aria-labelledby="continuous-slider"
+              color="secondary"
+              min={0}
+              max={255}
+            />
+          </div>
+          <div>
+            <table style={styleTable}>
+              <tbody>
+                <tr>
+                  <td style={styleTableTd}>min:</td>
+                  <td style={styleTableTd}>{this.state.minHist}</td>
+                  <td style={styleTableTd}>max:</td>
+                  <td style={styleTableTd}>{this.state.maxHist}</td>
+                </tr>
+                <tr>
+                  <td>mean:</td>
+                  <td>{parseFloat(this.state.mean).toFixed(3)}</td>
+                  <td>std dev:</td>
+                  <td>{parseFloat(this.state.stdDev).toFixed(3)}</td>
+                </tr>
+                <tr>
+                  <td>count:</td>
+                  <td>{this.state.histCount}</td>
+                  <td>value:</td>
+                  <td>{parseFloat(this.state.valueScale).toFixed(3)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+      </div>
       )
   }
 }
 
-export default Histogram
+const mapStateToProps = (state) => {
+  return {
+    activeDcmIndex: state.activeDcmIndex,
+    activeDcm: state.activeDcm,
+  }
+}
+
+export default connect(mapStateToProps)(Histogram)

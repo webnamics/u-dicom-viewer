@@ -1,23 +1,23 @@
 import React, { PureComponent } from 'react'
 import {connect} from 'react-redux'
 import DicomViewer from './components/dicomviewer'
-import HeaderItem from './components/HeaderItem'
-import MeasureItem from './components/MeasureItem'
+import DicomHeader from './components/DicomHeader'
+import Measurements from './components/Measurements'
 import Settings from './components/Settings'
 import AboutDlg from './components/AboutDlg'
-import { SETTINGS_DCMHEADER } from './constants/settings'
-import { toCsv } from './functions'
-import {deviceDetect} from 'react-device-detect'
+import { log } from './functions'
 import {dcmTool} from './actions/index'
+import {dcmIsOpen} from './actions/index'
+import {activeDcm} from './actions/index'
+import {activeDcmIndex} from './actions/index'
+import {activeMeasurements} from './actions/index'
+import {setLayout} from './actions/index'
+import Histogram from './components/Histogram'
 import Icon from '@mdi/react'
-
-//import { isBrowser, isMobile } from 'react-device-detect'
-
-//import clsx from 'clsx'
-//import { makeStyles } from '@material-ui/core/styles'
+import LayoutTool from './components/LayoutTool'
 import { withStyles } from '@material-ui/core/styles'
 import AppBar from '@material-ui/core/AppBar'
-import ClearIcon from '@material-ui/icons/Clear'
+import Collapse from '@material-ui/core/Collapse'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
@@ -26,6 +26,8 @@ import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import Divider from '@material-ui/core/Divider'
 import Drawer from '@material-ui/core/Drawer'
+import ExpandLess from '@material-ui/icons/ExpandLess'
+import ExpandMore from '@material-ui/icons/ExpandMore'
 import IconButton from '@material-ui/core/IconButton'
 import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
@@ -33,10 +35,11 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import MenuIcon from '@material-ui/icons/Menu'
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera'
-import SaveIcon from '@material-ui/icons/Save'
+import Popover from '@material-ui/core/Popover'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
+import { isMobile, isTablet } from 'react-device-detect'
 
 import { 
   mdiAngleAcute,
@@ -53,12 +56,16 @@ import {
   mdiFileCad, 
   mdiFolder,
   mdiGesture,
+  mdiViewGridPlusOutline,
+  mdiImageEdit,
   mdiInformationOutline,
+  mdiInvertColors,
   mdiMagnify,
   mdiRefresh,
   mdiRectangle,
   mdiRuler,
   mdiSettings,
+  mdiToolbox,
   mdiTrashCanOutline, 
   mdiVideo,
   mdiWeb,
@@ -66,10 +73,11 @@ import {
 
 import './App.css'
 
-const iconColor = '#FFFFFF'
-let iconTool = null
+log()
 
 const drawerWidth = 240
+const iconColor = '#FFFFFF'
+let iconTool = null
 
 const styles = theme => ({
   '@global': {
@@ -81,7 +89,6 @@ const styles = theme => ({
     flexGrow: 1,
   },
   root: {
-    //flexGrow: 1,
     display: 'flex',
   },
   menuButton: {
@@ -144,7 +151,6 @@ const styles = theme => ({
 
 })
 
-
 class App extends PureComponent {
 
   constructor(props) {
@@ -153,10 +159,15 @@ class App extends PureComponent {
     this.fileOpen = React.createRef()
     this.showFileOpen = this.showFileOpen.bind(this)
     this.openUrlField = React.createRef()
-
+    
+    this.dicomViewersRefs = []
+    this.dicomViewers = []
+    for(let i=0; i < 16; i++) {
+      this.dicomViewers.push(this.setDcmViewer(i))
+    }
   }
 
-  menuListSetting = [
+  /*menuListSetting = [
     {
       key: 'overlay',
       primaryText: 'Overlay information',
@@ -170,38 +181,69 @@ class App extends PureComponent {
         console.log('menu setting saveas ')
       },
     },
-  ]
+  ]*/
 
   state = { 
-    visibleDcm: true,
+    anchorElLayout: null,    
+    openImageEdit: false,
     visibleMainMenu: true,
     visibleHeader: false,
     visibleSettings: false,
     visibleToolbar: true,
     visibleOpenUrl: false,
+    visibleToolbox: false,
     visibleMeasure: false,
     visibleClearMeasureDlg: false,
     visibleAbout: false,
     toolState: 1,
   }
 
+  setDcmViewer = (index) => {
+    return (
+      <DicomViewer 
+        dcmRef={(ref) => {this.dicomViewersRefs[index] = ref}}
+        index={index}
+        runTool={ref => (this.runTool = ref)} 
+        changeTool={ref => (this.changeTool = ref)} 
+      />   
+    )
+  }
+
+  getDcmViewerRef = (index) => {
+    return this.dicomViewersRefs[index]
+  }
+
+  getDcmViewer = (index) => {
+    return this.dicomViewers[index]
+  }
+
+  getActiveDcmViewer = () => {
+    return this.dicomViewersRefs[this.props.activeDcmIndex]
+  }  
+
   showFileOpen() {
+    this.props.isOpenStore(false)
     this.fileOpen.current.click()
   }
 
-  handleChange = (filesSelected) => {
-    console.log('load file: ', filesSelected)
+  handleOpenFile = (filesSelected) => {
     this.hideMainMenu()
     const file = filesSelected[0]
-    this.runTool.runTool('openfile', file)
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openfile', file)
   }
 
   componentDidMount() {
     // Need to set the renderNode since the drawer uses an overlay
-    this.dialog = document.getElementById('drawer-routing-example-dialog')
-    console.log('deviceDetect: ', deviceDetect())
+    //this.dialog = document.getElementById('drawer-routing-example-dialog')
+    window.scrollTo(0, 0)
   }
 
+
+  showAppBar = () => {
+    window.scrollTo(0, 0)
+  }
+  
 
   toggleMainMenu = () => {
     this.setState({ visibleMainMenu: !this.state.visibleMainMenu })
@@ -221,40 +263,29 @@ class App extends PureComponent {
 
 
   toggleHeader = () => {
-    this.setState({ visibleHeader: !this.state.visibleHeader })
+    const visible = !this.state.visibleHeader
+    this.setState({ visibleHeader: visible })
+    if (visible) 
+      this.setState({ visibleMeasure: false, visibleToolbox: false })    
   }
 
-  saveHeader = () => {
-    let exportAs = localStorage.getItem(SETTINGS_DCMHEADER)
-    if (exportAs === null) {
-      exportAs = "json"
-      localStorage.setItem(SETTINGS_DCMHEADER, exportAs)
-    }  
 
-    let fileData = ''
-    
-    if (exportAs === 'csv') {
-      fileData = toCsv(this.props.header)
-    } else {
-      const obj = this.props.header.reduce((o, item) => ({ ...o, [item.name]: item.value}), {})
-      fileData = JSON.stringify(obj)
-    }
-    
-    const element = document.createElement("a")
-    const file = new Blob([fileData], {type: 'text/plain'})
-    element.href = URL.createObjectURL(file)
-    element.download = `${this.props.localfile.name}.${exportAs}`
-    document.body.appendChild(element) // Required for this to work in FireFox
-    element.click()
+  toggleToolbox = () => {
+    const visible = !this.state.visibleToolbox
+    this.setState({ visibleToolbox: visible })
+    if (visible) 
+      this.setState({ visibleMeasure: false, visibleHeader: false })
   }
-
 
   saveMeasure = () => {
-    this.runTool.runTool('savetools')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('savetools')
   }
   
   toggleMeasure = () => {
-    this.setState({ visibleMeasure: !this.state.visibleMeasure })
+    const visible = !this.state.visibleMeasure
+    this.setState({ visibleMeasure: visible })
+    if (visible) 
+      this.setState({ visibleToolbox: false, visibleHeader: false })
   }
 
   hideMeasure = () => {
@@ -279,7 +310,7 @@ class App extends PureComponent {
 
   confirmClearMeasureDlg = () => {
     this.hideClearMeasureDlg()
-    this.runTool.runTool('removetools')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('removetools')
   }
 
 
@@ -289,11 +320,11 @@ class App extends PureComponent {
 
   
   showSettings = () => {
-    this.setState({ visibleDcm: false, visibleMainMenu: false, visibleSettings: true, visibleToolbar: false, position: 'right' });
+    this.setState({ visibleMainMenu: false, visibleSettings: true, visibleToolbar: false, position: 'right' });
   }
 
   hideSettings = () => {
-    this.setState({ visibleDcm: true, visibleMainMenu: true, visibleSettings: false, visibleToolbar: true })
+    this.setState({ visibleMainMenu: true, visibleSettings: false, visibleToolbar: true })
   }
 
   handleVisibilitySettings = (visibleSettings) => {
@@ -310,28 +341,59 @@ class App extends PureComponent {
       () => {
         if (openDlg) {
           this.hideMainMenu()
-          return(this.runTool.runTool('openurl', this.openUrlField.value))
+          return(this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openurl', this.openUrlField.value))
         } 
     })
   }
 
   downloadOpenUrl = () => {
-    this.setState({ visibleDcm: true, visibleOpenUrl: false, visibleToolbar: true })
+    this.setState({ visibleOpenUrl: false, visibleToolbar: true })
   }
   
   resetImage = () => {
-    console.log('resetImage: ')
-    this.runTool.runTool('reset')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('reset')
   }
   
   saveShot = () => {
-    console.log('saveShot: ')
-    this.runTool.runTool('saveas')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('saveas')
   }
 
   cinePlayer = () => {
-    console.log('cinePlayer: ')
-    this.runTool.runTool('cine')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('cine')
+  }
+
+  clear = () => {  
+    this.setState({openImageEdit: false, visibleToolbox: false, visibleMeasure: false, visibleHeader: false})
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
+  }
+
+  handleLayout = (event) => {
+    this.setState({anchorElLayout: event.currentTarget})
+  }
+  
+  closeLayout = () => {
+    this.setState({anchorElLayout: null})
+  }
+
+  changeLayout = (row, col) => {
+    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
+    // if reduce the grid clear the unused views
+    if (row < this.props.layout[0] || col < this.props.layout[1]) {
+      this.layoutGridClick(0)
+      for(let i=0; i < 4; i++) {
+        for(let j=0; j < 4; j++) {
+          if ((i+1 > row) || (j+1 > col)) {
+            const index = i*4+j
+            if (this.dicomViewersRefs[index] !== undefined) {  
+              //console.log(`clear view [${i},${j}], index: ${index}`)
+              this.dicomViewersRefs[index].runTool('clear')
+             }
+          }
+        }
+      }
+    }
+    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)  
+    this.props.setLayoutStore(row, col)
   }
 
   toolExecute = (tool) => {
@@ -373,11 +435,10 @@ class App extends PureComponent {
           break     
     }
     this.props.toolStore(tool)
-    this.runTool.runTool(tool)
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool(tool)
   }
 
   toolChange = () => {
-    console.log('toolChange: ')
     const toolState = 1-this.state.toolState
     this.setState({toolState: toolState}, () => {
       this.changeTool.changeTool(this.props.tool, toolState)
@@ -385,48 +446,133 @@ class App extends PureComponent {
   }
 
   toolRemove = (index) => {
-    this.runTool.runTool('removetool', index)
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('removetool', index)
+  }
+
+  toggleImageEdit = () => {
+    this.setState({openImageEdit: !this.state.openImageEdit})
+  }
+ 
+  layoutGridClick = (index) => {
+    if (isMobile && index === this.props.activeDcmIndex) return
+    //console.log('layoutGridClick: ', index)    
+    this.props.setActiveDcmIndex(index)
+    const dcmViewer = this.getDcmViewerRef(index)
+    this.props.setActiveMeasurements(dcmViewer.measurements)
+    this.props.setActiveDcm({image: dcmViewer.image, element: dcmViewer.dicomImage, isDicom: dcmViewer.isDicom})
+  }
+ 
+  layoutGridTouch = (index) => {
+    if (!isMobile && index === this.props.activeDcmIndex) return
+    //console.log('layoutGridTouch: ', index)
+    this.props.setActiveDcmIndex(index)
+    const dcmViewer = this.getDcmViewerRef(index)
+    this.props.setActiveMeasurements(dcmViewer.measurements)
+    this.props.setActiveDcm({image: dcmViewer.image, element: dcmViewer.dicomImage, isDicom: dcmViewer.isDicom})   
+  }
+
+  buildLayoutGrid = () => {
+    let dicomviewers = []
+    for(let i=0; i < this.props.layout[0]; i++) {
+      for(let j=0; j < this.props.layout[1]; j++) {
+        const styleLayoutGrid = {
+          border: this.props.layout[0] === 1 && this.props.layout[1] === 1 ? 'solid 1px #000000' : 'solid 1px #444444',
+        }
+        const index = i*4+j
+        dicomviewers.push(
+          <div 
+            key={index} 
+            style={styleLayoutGrid} 
+            onClick={() => this.layoutGridClick(index)} 
+            onTouchStart={() => this.layoutGridTouch(index)}
+          >
+            {this.getDcmViewer(index)}
+          </div>        
+        )
+      }
+    }
+
+    return (
+      <div
+        id="dicomviewer-grid"
+        style={{
+          display: 'grid',
+          gridTemplateRows: `repeat(${this.props.layout[0]}, ${100 / this.props.layout[0]}%)`,
+          gridTemplateColumns: `repeat(${this.props.layout[1]}, ${100 / this.props.layout[1]}%)`,
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        {dicomviewers}
+      </div>
+    )
+  }
+
+  getFileName = (dcmViewer) => {
+    if (dcmViewer.localfile !== null) {
+      return dcmViewer.localfile.name
+    } else {
+      return dcmViewer.localurl.substring(dcmViewer.localurl.lastIndexOf('/')+1)
+    }
+  }
+
+  appBarTitle = (classes, isOpen, dcmViewer) => {
+    if (isMobile && !isTablet) {
+      if (isOpen) 
+        return null
+      else 
+        return (
+          <Typography variant="overline" className={classes.title}>
+            <strong>U</strong>niversal <strong>D</strong>icom <strong>V</strong>iewer
+          </Typography>          
+        )
+    } else {
+      if (isOpen) 
+        return (
+          <Typography variant="overline" className={classes.title}>
+            {this.getFileName(dcmViewer)}
+          </Typography>
+        )
+      else
+        return (
+          <Typography variant="overline" className={classes.title}>
+            <strong>U</strong>niversal <strong>D</strong>icom <strong>V</strong>iewer
+          </Typography>
+        )
+    }
   }
 
   render() {
+    //console.log('App render: ')
+
     const { classes } = this.props
 
-    const isOpen = this.props.isOpen
+    const isOpen = this.props.isOpen[this.props.activeDcmIndex]
 
-    const visibleDcm = this.state.visibleDcm
+    const openImageEdit = this.state.openImageEdit
     const visibleMainMenu = this.state.visibleMainMenu
     const visibleHeader = this.state.visibleHeader
     const visibleSettings = this.state.visibleSettings
     const visibleAbout = this.state.visibleAbout
-    //const visibleToolbar = this.state.visibleToolbar
-    //const visibleOpenUrl = this.state.visibleOpenUrl
     const visibleMeasure = this.state.visibleMeasure
-    
+    const visibleToolbox = this.state.visibleToolbox
+    const visibleLayout = Boolean(this.state.anchorElLayout)
+
     let iconToolColor = this.state.toolState === 1 ? '#FFFFFF' : '#999999'
+
+    const dcmViewer = this.getActiveDcmViewer()
+
+    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
 
     return (
       <div>
-        <div>
-          <input
-            type="file"
-            id="my_file"
-            style={{ display: "none" }}
-            ref={this.fileOpen}
-            onChange={e => this.handleChange(e.target.files)}
-          />
-        </div>
-
-        <AppBar className={classes.appBar}>
+        <AppBar className={classes.appBar} position='static' elevation={0}>
           <Toolbar variant="dense">
             <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={this.toggleMainMenu}>
               <MenuIcon />
             </IconButton>
-            { !isOpen ? (
-              <Typography variant="overline" className={classes.title}>
-                <strong>U</strong>niversal <strong>D</strong>icom <strong>V</strong>iewer
-              </Typography>
-             ) : null
-            }
+            { this.appBarTitle(classes, isOpen, dcmViewer) }
+            
             <div className={classes.grow} />
             { !isOpen ? (
               <IconButton onClick={this.showAbout}>
@@ -440,7 +586,7 @@ class App extends PureComponent {
                 </IconButton>
               ) : null
             }
-            { this.props.numberOfFrames > 1 &&  isOpen ? (
+            { isOpen && dcmViewer.numberOfFrames > 1 &&  isOpen ? (
                 <IconButton onClick={this.cinePlayer}>
                   <Icon path={mdiVideo} size={'1.5rem'} color={iconColor} />
                 </IconButton> 
@@ -458,13 +604,19 @@ class App extends PureComponent {
               </IconButton>
              ) : null
             }
-            { isOpen > 0 ? (
+            { isOpen ? (
+              <IconButton color="inherit" onClick={this.toggleToolbox}>
+                <Icon path={mdiToolbox} size={'1.5rem'} color={iconColor} />
+              </IconButton>
+              ) : null
+            }              
+            { isOpen ? (
               <IconButton color="inherit" onClick={this.toggleMeasure}>
                 <Icon path={mdiFileCad} size={'1.5rem'} color={iconColor} />
               </IconButton>
               ) : null
             }  
-            { this.props.header.length > 0 ? (
+            { isOpen && dcmViewer.isDicom ? (
               <IconButton color="inherit" onClick={this.toggleHeader}>
                 <Icon path={mdiFileDocument} size={'1.5rem'} color={iconColor} />
               </IconButton>
@@ -474,15 +626,16 @@ class App extends PureComponent {
         </AppBar>
 
         <Drawer 
+          variant="persistent"
           open={visibleMainMenu} 
           style={{position:'relative', zIndex: 1}}
           onClose={this.toggleMainMenu}
         >
           <div className={classes.toolbar}>
             <List dense={true}>
-              <ListItem button onClick={() => this.showSettings()}>
-                <ListItemIcon><Icon path={mdiSettings} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Settings' />
+              <ListItem button onClick={() => this.showAppBar()}>
+                <ListItemIcon><MenuIcon /></ListItemIcon>
+                <ListItemText primary='Tool Bar' />
               </ListItem>              
               <ListItem button onClick={() => this.showFileOpen()}>
                 <ListItemIcon><Icon path={mdiFolder} size={'1.5rem'} color={iconColor} /></ListItemIcon>
@@ -492,10 +645,14 @@ class App extends PureComponent {
                 <ListItemIcon><Icon path={mdiWeb} size={'1.5rem'} color={iconColor} /></ListItemIcon>
                 <ListItemText primary='Open URL ...' />
               </ListItem>
-              <ListItem button onClick={() => this.runTool.runTool('clear')}>
+              <ListItem button onClick={() => this.clear()}>
                 <ListItemIcon><Icon path={mdiDelete} size={'1.5rem'} color={iconColor} /></ListItemIcon>
                 <ListItemText primary='Clear' />
               </ListItem>  
+              <ListItem button onClick={this.handleLayout}>
+                <ListItemIcon><Icon path={mdiViewGridPlusOutline} size={'1.5rem'} color={iconColor} /></ListItemIcon>
+                <ListItemText primary='Layout' />              
+              </ListItem>   
               <ListItem button onClick={() => this.showSettings()}>
                 <ListItemIcon><Icon path={mdiSettings} size={'1.5rem'} color={iconColor} /></ListItemIcon>
                 <ListItemText primary='Settings' />
@@ -548,53 +705,70 @@ class App extends PureComponent {
               <ListItem button onClick={() => this.toolExecute('Histogram')} disabled={!isOpen}>
                 <ListItemIcon><Icon path={mdiChartHistogram} size={'1.5rem'} color={iconColor} /></ListItemIcon>
                 <ListItemText primary='Histogram' />
-              </ListItem>                                                                                                                                                      
+              </ListItem>  
+              <ListItem button onClick={() => this.toggleImageEdit()} disabled={!isOpen}>
+                <ListItemIcon><Icon path={mdiImageEdit} size={'1.5rem'} color={iconColor} /></ListItemIcon>
+                <ListItemText primary='Edit' />
+                {openImageEdit ? <ExpandLess /> : <ExpandMore />}
+              </ListItem>          
+              <Collapse in={openImageEdit} timeout="auto" unmountOnExit>
+                <List  dense={true} component="div">
+                  <ListItem button style={{paddingLeft: 30}} onClick={() => this.toolExecute('Invert')}>
+                    <ListItemIcon><Icon path={mdiInvertColors} size={'1.5rem'} color={iconColor} /></ListItemIcon>
+                    <ListItemText primary="Invert" />
+                  </ListItem>
+                </List>
+              </Collapse>
             </List>
           </div>
         </Drawer>       
 
         <Drawer
+          variant="persistent"
           anchor='right'
           open={visibleHeader}
           onClose={this.toggleHeader}
         >
-          <Toolbar variant="dense">
-            <IconButton color="inherit" onClick={this.toggleHeader}>
-              <ClearIcon />
-            </IconButton>
-            <Typography variant="h6" className={classes.title}>
-              Dicom Header
-            </Typography>
-              <div className={classes.grow} />
-            <IconButton color="inherit" onClick={this.saveHeader}>
-              <SaveIcon />
-            </IconButton>
-          </Toolbar>
-          {this.props.header.map((item, index) => <HeaderItem name={item.name} value={item.value} key={index} />)} 
-        </Drawer>  
+          { visibleHeader ? <DicomHeader dcmViewer={dcmViewer} classes={classes} color={iconColor} /> : null } 
+        </Drawer>
 
         <Drawer
+          variant="persistent"
           anchor='right'
           open={visibleMeasure}
           onClose={this.toggleMeasure}
         >
-          <Toolbar variant="dense">
-            <IconButton color="inherit" onClick={this.toggleMeasure}>
-              <ClearIcon />
-            </IconButton>
-            <Typography variant="h6" className={classes.title}>
-              Measurements&nbsp;&nbsp;
-            </Typography>
+          <div style={{marginTop: '48px'}}>
+            <Toolbar variant="dense">
+              <Typography variant="subtitle1" className={classes.title}>
+                Measurements&nbsp;&nbsp;
+              </Typography>
               <div className={classes.grow} />
-            <IconButton color="inherit" onClick={this.saveMeasure} edge="end">
-              <Icon path={mdiContentSaveOutline} size={'1.5rem'} color={iconColor} />
-            </IconButton>
-            <IconButton color="inherit" onClick={this.clearMeasure} edge="end">
-              <Icon path={mdiTrashCanOutline} size={'1.5rem'} color={iconColor} />
-            </IconButton>
-          </Toolbar>
-          {this.props.measure.map((item, index) => <MeasureItem item={item} index={index} toolRemove={this.toolRemove} key={index} classes={classes} />)} 
+              <IconButton color="inherit" onClick={this.saveMeasure} edge="end">
+                <Icon path={mdiContentSaveOutline} size={'1.5rem'} color={iconColor} />
+              </IconButton>
+              <IconButton color="inherit" onClick={this.clearMeasure} edge="end">
+                <Icon path={mdiTrashCanOutline} size={'1.5rem'} color={iconColor} />
+              </IconButton>
+            </Toolbar>
+            <div>  
+              { isOpen ? <Measurements dcmViewer={dcmViewer} toolRemove={this.toolRemove} classes={classes} /> : null } 
+            </div>
+          </div>
         </Drawer>  
+
+        <Drawer
+          variant="persistent"
+          anchor='right'
+          open={visibleToolbox}
+          onClose={this.toggleToolbox}
+        >
+          <div style={{marginTop: '48px'}}>
+            <div>  
+              { isOpen ? <Histogram key={this.getFileName(dcmViewer)} /> : null } 
+            </div>
+          </div>
+        </Drawer>          
 
         {visibleSettings ? <Settings onClose={this.hideSettings}/>: null}
 
@@ -643,30 +817,64 @@ class App extends PureComponent {
             </DialogActions>
         </Dialog>
 
-        <DicomViewer 
-          runTool={ref => (this.runTool = ref)} 
-          changeTool={ref => (this.changeTool = ref)} 
-          visible={visibleDcm} 
-        />
+        <Popover
+          id={'id-layout'}
+          open={visibleLayout}
+          anchorEl={this.state.anchorElLayout}
+          onClose={this.closeLayout}
+          anchorOrigin={{
+            vertical: 'center',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'center',
+            horizontal: 'left',
+          }}
+        >
+          <LayoutTool 
+            row={this.props.layout[0]-1} 
+            col={this.props.layout[1]-1}
+            onChange={this.changeLayout}
+          />  
+        </Popover>        
+
+        <div style={{height: 'calc(100vh - 48px)'}}>
+          {this.buildLayoutGrid()}  
+        </div>
+
+        <div>
+          <input
+            type="file"
+            id="my_file"
+            style={{ display: "none" }}
+            ref={this.fileOpen}
+            onChange={e => this.handleOpenFile(e.target.files)}
+          />
+        </div>
+    
       </div>
-    );
+    )
   }
 }
 
 const mapStateToProps = (state) => {
   return {
-    localfile: state.localfile,
     isOpen: state.isOpen,
-    numberOfFrames: state.numberOfFrames,
     tool: state.tool,
-    header: state.header,
-    measure: state.measure
+    activeDcmIndex: state.activeDcmIndex,
+    measurements: state.measurements,
+    layout: state.layout
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
     toolStore: (tool) => dispatch(dcmTool(tool)),
+    isOpenStore: (value) => dispatch(dcmIsOpen(value)),
+    setActiveDcm: (dcm) => dispatch(activeDcm(dcm)),
+    setActiveDcmIndex: (index) => dispatch(activeDcmIndex(index)),
+    setActiveMeasurements: (measurements) => dispatch(activeMeasurements(measurements)),
+    setLayoutStore: (row, col) => dispatch(setLayout(row, col)),
   }
 }
 

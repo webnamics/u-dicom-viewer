@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react'
+import {connect} from 'react-redux'
 import Button from '@material-ui/core/Button'
 import CreateIcon from '@material-ui/icons/Create'
 import DeleteIcon from '@material-ui/icons/Delete'
@@ -11,7 +12,6 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
-import {connect} from 'react-redux'
 
 class MeasureItem extends PureComponent {
 
@@ -48,7 +48,7 @@ class MeasureItem extends PureComponent {
 
     confirmNote = (index) => {
         this.hideDlgNote()
-        this.props.measure[index].note = this.noteField.value
+        this.props.measurements[index].note = this.noteField.value
     }   
 
     confirmDelete = (index) => {
@@ -120,33 +120,35 @@ class MeasureItem extends PureComponent {
                         </IconButton>
                     </Toolbar>
                 </ListItem>
-
-                <Dialog
-                    open={this.state.visibleDlgNote}
-                    onClose={this.hideDlgNote}
-                    aria-labelledby="form-dialog-title"
-                >
-                    <DialogTitle id="form-dialog-title">{"Note for measurement:"}</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            ref="noteField"
-                            autoFocus
-                            margin="dense"
-                            id="note"
-                            fullWidth
-                            defaultValue={this.props.measure[index].note}
-                            inputRef={input => (this.noteField = input)}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.hideDlgNote} >
-                            Cancel
-                        </Button>
-                        <Button onClick={() => this.confirmNote(index)} autoFocus>
-                            Ok
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                
+                { this.state.visibleDlgNote ?
+                    <Dialog
+                        open={this.state.visibleDlgNote}
+                        onClose={this.hideDlgNote}
+                        aria-labelledby="form-dialog-title"
+                    >
+                        <DialogTitle id="form-dialog-title">{"Note for measurement:"}</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                ref="noteField"
+                                autoFocus
+                                margin="dense"
+                                id="note"
+                                fullWidth
+                                defaultValue={this.props.measurements[index].note}
+                                inputRef={input => (this.noteField = input)}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={this.hideDlgNote} >
+                                Cancel
+                            </Button>
+                            <Button onClick={() => this.confirmNote(index)} autoFocus>
+                                Ok
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                : null }
 
                 <Dialog
                     open={this.state.visibleDlgDelete}
@@ -167,11 +169,12 @@ class MeasureItem extends PureComponent {
         )
     }
 }
-  
+
 const mapStateToProps = (state) => {
     return {
-        measure: state.measure
+        measurements: state.measurements,
     }
 }
 
-export default connect(mapStateToProps, )(MeasureItem)
+//export default connect(mapStateToProps, )(MeasureItem)
+export default connect(mapStateToProps)(MeasureItem)

@@ -5,6 +5,8 @@ import {
     SETTINGS_MEASUREMENT
 } from './constants/settings'
 
+// To see the console output set the key 'debug-u-dicom-viewer' in 
+// 'Storage->Local Storage' panel of your browser Develop Tool
 export function log() {
     let log = localStorage.getItem('debug-u-dicom-viewer')
     if (log === null) {

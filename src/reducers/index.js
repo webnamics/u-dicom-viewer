@@ -1,15 +1,12 @@
 import {
   CLEAR_STORE, 
-  LOAD_LOCALFILE, 
-  LOAD_URL, 
   DCM_IS_OPEN, 
-  DCM_NUMBER_OF_FRAMES, 
   DCM_TOOL, 
+  ACTIVE_DCM_INDEX, 
+  ACTIVE_DCM, 
   DCM_IMAGE,
-  MEASURE_STORE, 
-  MEASURE_CLEAR, 
-  MEASURE_REMOVE, 
-  DCMDATA_STORE
+  ACTIVE_MEASUREMENTS,
+  LAYOUT
 } from '../actions'
 
 export default function storeReducer(state={}, action) {
@@ -17,154 +14,82 @@ export default function storeReducer(state={}, action) {
       
       case CLEAR_STORE:
         return {
-          localfile: null,
-          url: null,
-          isOpen: false,
-          numberOfFrames: 1,
+          isOpen: state.isOpen.map((el, i) => i === state.activeDcmIndex ? false : el),
           tool: null,
+          activeDcmIndex: state.activeDcmIndex,
+          activeDcm: state.activeDcm,
           images: [],
-          header: [],
-          measure: []
+          measurements: null,
+          layout: state.layout
         }    
-
-      case LOAD_LOCALFILE:
-        return {
-          localfile: action.localfile,
-          url: null,
-          isOpen: false,
-          numberOfFrames: 1,
-          tool: null,
-          images: [],
-          header: [],
-          measure: []
-        }    
-
-      case LOAD_URL:
-          return {
-            localfile: null,
-            url: action.url,
-            isOpen: false,
-            numberOfFrames: 1,
-            tool: null,
-            images: [],
-            header: [],
-            measure: []
-          }    
 
       case DCM_IS_OPEN:
           return {
             ...state,
-            isOpen: action.value,
+            isOpen: state.isOpen.map((el, i) => i === state.activeDcmIndex ? action.value : el),
             images: [
               ...state.images
             ],            
-            header: [
-              ...state.header
-            ],
-            measure: [
-              ...state.measure
-            ]            
-          }    
-
-      case DCM_NUMBER_OF_FRAMES:
-          return {
-            ...state,
-            numberOfFrames: action.value,
-            images: [
-              ...state.images
-            ],  
-            header: [
-              ...state.header
-            ],
-            measure: [
-              ...state.measure
-            ]
+            measurements: state.measurements,
+            layout: state.layout        
           }    
 
       case DCM_TOOL:
           return {
-              ...state,
-              tool: action.tool,
-              images: [
-                ...state.images
-              ],  
-              header: [
-                ...state.header
-              ],
-              measure: [
-                ...state.measure
-              ]  
+            ...state,
+            tool: action.tool,
+            images: [
+              ...state.images
+            ],  
+            measurements: state.measurements,
+            layout: state.layout
           }  
+
+      case ACTIVE_DCM_INDEX:
+          return {
+            ...state,
+            activeDcmIndex: action.activeDcmIndex,
+            images: [
+              ...state.images
+            ],  
+            measurements: state.measurements,
+            layout: state.layout
+          }  
+
+      case ACTIVE_DCM:
+          return {
+            ...state,
+            activeDcm: action.activeDcm,
+            images: [
+              ...state.images
+            ],  
+            measurements: state.measurements,
+            layout: state.layout
+          }            
 
       case DCM_IMAGE:
           return {
-              ...state,
-              images: [
-                ...state.images,
-                action.images,
-              ],  
-              header: [
-                ...state.header
-              ],
-              measure: [
-                ...state.measure
-              ]  
+            ...state,
+            images: [
+              ...state.images,
+              action.images,
+            ],  
+            measurements: state.measurements,
+            layout: state.layout
           } 
 
-      case DCMDATA_STORE:
-        const [name, value] = action.data
-        if (value === undefined) {
-          return state
-        }
+      case ACTIVE_MEASUREMENTS:
         return {
           ...state,
-          header: [
-            ...state.header,
-            { 'name': name, 'value': value },
-          ],
-        }   
+          measurements: [...action.measurements],
+        }             
 
-      case MEASURE_STORE:
-        return {
-          ...state,
-          images: [
-            ...state.images
-          ],
-          header: [
-            ...state.header
-          ],          
-          measure: [
-            ...state.measure,
-            action.measure,
-          ],
-        }   
-
-      case MEASURE_REMOVE:
-        let measure = [...state.measure]
-        measure.splice(action.index, 1)
-        return {
-          ...state,
-          images: [
-            ...state.images
-          ],
-          header: [
-            ...state.header
-          ],          
-          measure: [
-            ...measure,
-          ],
-        }   
-
-      case MEASURE_CLEAR:
+      case LAYOUT:
             return {
               ...state,
-              images: [
-                ...state.images
-              ],
-              header: [
-                ...state.header
-              ],          
-              measure: [],
+              images: [...state.images],
+              measurements: state.measurements,
+              layout: action.layout
             }  
 
       default:

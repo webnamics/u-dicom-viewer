@@ -2,14 +2,13 @@ import {createStore} from 'redux'
 import storeReducer from '../reducers/index'
 
 let initialState = {
-    localfile: null,
-    url: null,
-    isOpen: false,
-    numberOfFrames: 1,
+    isOpen: new Array(16).fill(false),
     tool: null,
+    activeDcmIndex: 0,
+    activeDcm: null,
     images: [],
-    header: [],
-    measure: []
+    measurements: null,
+    layout: [1,1] // first element represents the rows, second the columns
 }
 
 const store = createStore(storeReducer, initialState,
