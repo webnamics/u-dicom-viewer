@@ -179,7 +179,7 @@ class DicomViewer extends React.Component {
 
     
     onImageLoaded = (e) => {
-      //console.log('cornerstoneimageloaded: ')
+      console.log('cornerstoneimageloaded: ')
 
     }
 
@@ -221,10 +221,24 @@ class DicomViewer extends React.Component {
 
     onMeasurementModified = (e) => {
       //console.log('cornerstonetoolsmeasurementmodified: ', e.detail.measurementData)
+      
+    }
+
+    onMeasurementAdded = (e) => {
+      console.log('cornerstonetoolsmeasurementadded: ', e.detail.measurementData)
+      if (this.props.tool !== "Angle") return
+      const measure = {
+        tool: this.props.tool,
+        note: '',
+        data: e.detail.measurementData
+      }
+      this.measurementSave(measure)
+      this.props.setActiveMeasurements(this.measurements)      
+
     }
 
     onMeasurementCompleted = (e) => {
-      //console.log('cornerstonetoolsmeasurementcompleted: ', e.detail.measurementData)
+      console.log('cornerstonetoolsmeasurementcompleted: ', e.detail.measurementData)
       
       const measure = {
         tool: this.props.tool,

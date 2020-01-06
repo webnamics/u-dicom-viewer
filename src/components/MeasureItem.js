@@ -12,6 +12,13 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
+import { withStyles } from '@material-ui/core/styles'
+
+const styles = theme => ({
+    listItemText:{
+        fontSize:'0.9em',
+    }
+})
 
 class MeasureItem extends PureComponent {
 
@@ -65,6 +72,8 @@ class MeasureItem extends PureComponent {
     }
     
     render() {    
+        const { classes } = this.props
+
         let item = this.props.item
         let index = this.props.index
         let pText = ''
@@ -110,7 +119,7 @@ class MeasureItem extends PureComponent {
         return (
             <div>
                 <ListItem>
-                    <ListItemText primary={pText} secondary={sText} />
+                    <ListItemText classes={{primary:classes.listItemText}} primary={pText} secondary={sText} />
                     <Toolbar>
                         <IconButton edge="end" onClick={() => this.onEdit(index)}>
                             <CreateIcon />
@@ -177,4 +186,4 @@ const mapStateToProps = (state) => {
 }
 
 //export default connect(mapStateToProps, )(MeasureItem)
-export default connect(mapStateToProps)(MeasureItem)
+export default connect(mapStateToProps)(withStyles(styles)(MeasureItem))
