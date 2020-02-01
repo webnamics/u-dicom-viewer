@@ -26,7 +26,7 @@ class Measurements extends PureComponent {
   }
 
   render() {   
-    const classes = this.props.classes
+    //const classes = this.props.classes
 
     return (
       <div>
@@ -34,7 +34,7 @@ class Measurements extends PureComponent {
         <div>
           { this.props.measurements !== null ?
               this.props.measurements.map((item, index) => {
-                  return <MeasureItem item={item} index={index} toolRemove={this.props.toolRemove} key={index} classes={classes} />
+                  return <MeasureItem item={item} index={index} toolRemove={this.props.toolRemove} key={index} />
               }) 
             : null }
         </div>

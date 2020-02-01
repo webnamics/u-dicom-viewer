@@ -81,7 +81,7 @@ const DicomHeader = ({dcmViewer, classes, color}) => {
           </Typography>
           <div className={classes.grow} />
           <IconButton color="inherit" onClick={saveHeader}>
-            <Icon path={mdiContentSaveOutline} size={'1.5rem'} color={color} />
+            <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={color} />
           </IconButton>
         </Toolbar>
         <div>

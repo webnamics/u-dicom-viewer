@@ -14,23 +14,32 @@
 
 <h2><a id="user-content-acknowledgments" class="anchor" aria-hidden="true" href="#acknowledgments"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Key features</h2>
 <ul>
+	<li>Integration of a sandboxed file manager to handle easily files and subfolders. (1)</li>
+	<li>Open zip archive from local and decompress it into sandboxed file system.</li>
+	<li>Open zip archive from URL and decompress it into sandboxed file system.</li>
+	<li>Open images from sandboxed file system.</li>
+	<li>Open DICOMDIR from sandboxed file system.</li>
+	<li>Open DICOMDIR file from local (2).</li> 
 	<li>Open medical images in DICOM format from local and URL.</li> 
 	<li>Open images in JPEG or PNG format from local and URL.</li> 
+	<li>Export zip archive of images from sanboxed file system.</li> 
 	<li>Window width and window center control for DICOM images.</li>
 	<li>Zooming and panning images.</li> 
 	<li>Measurement tools with annotation field.</li>
 	<li>Measurement tools for length, area and angle, elliptical, rectangle and Freehand ROI.</li>
-	<li>Persistence of measurement tools. (1)</li>
+	<li>Persistence of measurement tools. (3)</li>
 	<li>Cine view with control functions.</li>
 	<li>Displaying DICOM attributes of image.</li>
 	<li>Multi-view support, it can open up to 16 different files (1x1 to 4x4 grid).</li>
 	<li>Histogram window.</li>
 	<li>Save DICOM attributes as JSON or CSV file.</li>
-	<li>Save screenshot in JPEG or PNG format.</li>
+	<li>Save screenshot in JPEG or PNG format into local or sandboxed file system.</li>
 </ul>
 
 <div>
-	(1) Stored in IndexedDB, the client-side database of web browser. In the database every measurement is associated with SOP Instance UID tag. 
+	<p>(1) Stored in IndexedDB, the client-side database of web browser.</p>
+	<p>(2) This feature is not present in mobile browser because the webkitdirectory attribute is not yet supported (for detail see <a href="https://caniuse.com/#feat=input-file-directory">caniuse.com/#feat=input-file-directory</a>).</p>
+	<p>(3) Stored in IndexedDB. In the database every measurement is associated with SOP Instance UID tag.</p>
 </div>
 
 <h2><a id="user-content-acknowledgments" class="anchor" aria-hidden="true" href="#acknowledgments"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Acknowledgments</h2>
@@ -38,7 +47,7 @@
 <ul>
 	<li><a href="https://github.com/cornerstonejs/cornerstone">Cornerstone Core</a>, complete web based medical imaging platform.</li>
 	<li><a href="https://github.com/cornerstonejs/cornerstoneTools">CornerstoneTools</a>, library of common tools that can be used with Cornerstone.</li>
-	<li><a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader">CornerstoneWADOImageLoader</a>, Cornerstone Image Loader that works with WADO-URI, WADO-RS and DICOM P10 files</li>
+	<li><a href="https://github.com/webnamics/cornerstoneWADOImageLoader">webnamics/CornerstoneWADOImageLoader</a>, Cornerstone Image Loader that works with WADO-URI, WADO-RS and DICOM P10 files. A fork that allow to load image from ArrayBuffer.</li>
 	<li><a href="https://github.com/cornerstonejs/cornerstoneWebImageLoader">CornerstoneWebImageLoader</a>, Cornerstone Image Loader that works with PNG and JPEG files.</li>
 	<li><a href="https://github.com/webnamics/cornerstoneFileImageLoader">CornerstoneFileImageLoader</a>, Cornerstone Image Loader for images (JPG, PNG) using the HTML5 File API.</li>
 	<li><a href="https://github.com/cornerstonejs/dicomParser">dicomParser</a>, JavaScript library designed to parse DICOM for web browsers.</li>
@@ -49,8 +58,9 @@
 	<li><a href="https://github.com/dfahlander/Dexie.js/">Dexie.js</a>, wrapper library for indexedDB - the standard database in the browser.</li>
 	<li><a href="https://github.com/duskload/react-device-detect">react-device-detect</a>, detect device, and render view according to detected device type.</li>
 	<li><a href="https://material-ui.com/">react-md</a>, React Material Design - React components built with sass.</li>
-	<li><a href="https://github.com/mlaursen/react-md">Material-UI</a>, Set of React components that implement Google's Material Design specification.</li>
-	<li><a href="https://github.com/hammerjs/hammer.js/tree/master">hammer.js</a>, JavaScript library for detecting touch gestures.</li>	
+	<li><a href="https://github.com/hammerjs/hammer.js/tree/master">hammer.js</a>, JavaScript library for detecting touch gestures.</li>
+	<li><a href="https://github.com/axios/axios">axios</a>, Promise based HTTP client for the browser and node.js.</li>
+	<li><a href="https://github.com/Stuk/jszip">JSZip</a>, Create, read and edit .zip files with Javascript.</li>
 </ul>
 
 

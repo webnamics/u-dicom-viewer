@@ -180,7 +180,7 @@ class Histogram extends PureComponent {
       m = m / (image.columns * image.rows)
       this.setState({mean: m})  
 
-      console.log('hist: ', hist)
+      //console.log('hist: ', hist)
 
       // calculate standard deviation
       let s = 0
@@ -207,8 +207,8 @@ class Histogram extends PureComponent {
       }
       this.hist256 = hist256
 
-      console.log('hist256: ', hist256)
-      console.log('max: ', max)
+      //console.log('hist256: ', hist256)
+      //console.log('max: ', max)
       
       const canvasH = this.canvasHistogram.current
       const ctxH = this.canvasHistogram.current.getContext("2d")
@@ -222,7 +222,7 @@ class Histogram extends PureComponent {
         this.setState({valueScale: p+minHist})
       }, true)
 
-      console.log('value: ', (m-minHist)/binSize)
+      //console.log('value: ', (m-minHist)/binSize)
       let value = Math.round((m-minHist)/binSize)
       this.setState({value: value})
       this.setState({valueScale: m})
@@ -269,9 +269,9 @@ class Histogram extends PureComponent {
     }
         
     handleChangeValue = (event, newValue) => {
-      console.log('newValue: ', newValue)
-      console.log('(newValue*this.binSize)+this.state.minHist: ', (newValue*this.binSize)+this.state.minHist)
-      console.log('this.hist256[newValue]: ', this.hist256[newValue])
+      //console.log('newValue: ', newValue)
+      //console.log('(newValue*this.binSize)+this.state.minHist: ', (newValue*this.binSize)+this.state.minHist)
+      //console.log('this.hist256[newValue]: ', this.hist256[newValue])
       this.setState({value: newValue})
       this.setState({valueScale: (newValue*this.binSize)+this.state.minHist})
       this.setState({histCount: this.hist256[newValue]})

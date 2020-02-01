@@ -1,8 +1,17 @@
 import { 
+    isAndroid,
+    isFirefox,
+    isMobile, 
+    isTablet 
+  } from 'react-device-detect'
+import { 
     SETTINGS_SAVEAS, 
+    SETTINGS_SAVEINTO,
     SETTINGS_DCMHEADER, 
     SETTINGS_OVERLAY, 
-    SETTINGS_MEASUREMENT
+    SETTINGS_MEASUREMENT,
+    SETTINGS_FSVIEW,
+    SETTINGS_DICOMDIRVIEW,    
 } from './constants/settings'
 
 // To see the console output set the key 'debug-u-dicom-viewer' in 
@@ -14,13 +23,77 @@ export function log() {
     }
 }
 
+export function isInputDirSupported() {
+    var tmpInput = document.createElement('input')
+    if ('webkitdirectory' in tmpInput 
+        || 'mozdirectory' in tmpInput 
+        || 'odirectory' in tmpInput 
+        || 'msdirectory' in tmpInput 
+        || 'directory' in tmpInput) return true
+    return false
+}
+
 export function isUrlImage(url) {
+    if (url === undefined || url === null) return false
     return(url.match(/\.(jpeg|jpg|png)$/) != null)
 }
 
 export function isFileImage(file) {
+    if (file === undefined || file === null) return false 
     const acceptedImageTypes = ['image/jpeg', 'image/png'] // 'image/gif', 
     return file && acceptedImageTypes.includes(file['type'])
+}
+
+export function isFsFileImage(fsItem) {
+    console.log('isFsFileImage: ', fsItem)
+    if (fsItem === undefined || fsItem === null) return false
+    return fsItem.type.toLowerCase() === 'jpeg' || fsItem.type.toLowerCase() === 'png'
+}
+
+export function getFileNameCorrect(filename) {
+    if (isAndroid && isFirefox) { // possible uncorrect .null extension is found in Android Firefox, it's a bug? CHECK IT
+        const ext = getFileExt(filename)
+        if (ext === 'null') {
+            return getFileName(filename)
+        }
+    }
+    return filename 
+}
+
+export function getFileExt(file) {
+    const re = /(?:\.([^.]+))?$/
+    const ext = re.exec(file)[1]
+    if (ext === undefined) {
+        return 'dcm'
+    }
+    return ext
+}
+
+export function getFileExtReal(file) {
+    const re = /(?:\.([^.]+))?$/
+    const ext = re.exec(file)[1]
+    if (ext === undefined) {
+        return ''
+    }
+    return ext
+}
+
+export function getFileName(file) {
+    const name = file.replace(/\.[^.$]+$/, '')
+    if (name === undefined) {
+        return ''
+    }
+    return name    
+}
+
+export function formatBytes(bytes, decimals = 2) {
+    if (bytes === '') return ''
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
 export function getSettingsSaveAs() {
@@ -34,6 +107,19 @@ export function getSettingsSaveAs() {
 
 export function setSettingsSaveAs(value) {
     localStorage.setItem(SETTINGS_SAVEAS, value)  
+}
+
+export function getSettingsSaveInto() {
+    let saveInto = localStorage.getItem(SETTINGS_SAVEINTO)
+    if (saveInto === null) {
+        saveInto = "local"
+      localStorage.setItem(SETTINGS_SAVEINTO, saveInto)
+    }
+    return saveInto
+}
+
+export function setSettingsSaveInto(value) {
+    localStorage.setItem(SETTINGS_SAVEINTO, value)  
 }
 
 export function getSettingsDcmHeader() {
@@ -65,8 +151,8 @@ export function setSettingsOverlay(value) {
 export function getSettingsMeasurement() {
     let measurement = localStorage.getItem(SETTINGS_MEASUREMENT)
     if (measurement === null) {
-        measurement = "1"
-      localStorage.setItem(SETTINGS_MEASUREMENT, measurement)
+        measurement = '1'
+        localStorage.setItem(SETTINGS_MEASUREMENT, measurement)
     }
     return measurement
 }
@@ -75,6 +161,31 @@ export function setSettingsMeasurement(value) {
     localStorage.setItem(SETTINGS_MEASUREMENT, value)  
 }
 
+export function getSettingsFsView() {
+    let view = localStorage.getItem(SETTINGS_FSVIEW)
+    if (view === null) {
+        view = isMobile && !isTablet ? 'bottom' : 'right'
+        localStorage.setItem(SETTINGS_FSVIEW, view)
+    }
+    return view
+}
+
+export function setSettingsFsView(value) {
+    localStorage.setItem(SETTINGS_FSVIEW, value)  
+}
+
+export function getSettingsDicomdirView() {
+    let view = localStorage.getItem(SETTINGS_DICOMDIRVIEW)
+    if (view === null) {
+        view = isMobile && !isTablet ? 'bottom' : 'right'
+        localStorage.setItem(SETTINGS_DICOMDIRVIEW, view)
+    }
+    return view
+}
+
+export function setSettingsDicomdirView(value) {
+    localStorage.setItem(SETTINGS_DICOMDIRVIEW, value)  
+}
 
 /**
  * Converts a value to a string appropriate for entry into a CSV table.  E.g., a string value will be surrounded by quotes.

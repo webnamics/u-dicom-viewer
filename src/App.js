@@ -1,21 +1,17 @@
 import React, { PureComponent } from 'react'
+import { withStyles } from '@material-ui/core/styles'
 import {connect} from 'react-redux'
+//import axios from 'axios'
+import Dicomdir from './components/Dicomdir'
 import DicomViewer from './components/dicomviewer'
 import DicomHeader from './components/DicomHeader'
 import Measurements from './components/Measurements'
 import Settings from './components/Settings'
 import AboutDlg from './components/AboutDlg'
-import { log } from './functions'
-import {dcmTool} from './actions/index'
-import {dcmIsOpen} from './actions/index'
-import {activeDcm} from './actions/index'
-import {activeDcmIndex} from './actions/index'
-import {activeMeasurements} from './actions/index'
-import {setLayout} from './actions/index'
 import Histogram from './components/Histogram'
-import Icon from '@mdi/react'
 import LayoutTool from './components/LayoutTool'
-import { withStyles } from '@material-ui/core/styles'
+import FsUI from './components/FsUI'
+import DownloadZipDlg from './components/DownloadZipDlg'
 import AppBar from '@material-ui/core/AppBar'
 import Collapse from '@material-ui/core/Collapse'
 import Button from '@material-ui/core/Button'
@@ -28,22 +24,44 @@ import Divider from '@material-ui/core/Divider'
 import Drawer from '@material-ui/core/Drawer'
 import ExpandLess from '@material-ui/icons/ExpandLess'
 import ExpandMore from '@material-ui/icons/ExpandMore'
+import Icon from '@mdi/react'
 import IconButton from '@material-ui/core/IconButton'
 import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import MenuIcon from '@material-ui/icons/Menu'
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera'
 import Popover from '@material-ui/core/Popover'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
-import { isMobile, isTablet } from 'react-device-detect'
-
+import { 
+  isMobile, 
+  isTablet,
+} from 'react-device-detect'
+import {
+  localfileStore,
+  dcmIsOpen,
+  activeDcm,
+  activeDcmIndex,
+  activeMeasurements,
+  setLayout,
+  dcmTool, 
+  setDicomdir,
+  setZippedFile,
+} from './actions/index'
+import { 
+  log,
+  getFileNameCorrect,
+  getFileExtReal,
+  isInputDirSupported,
+  getSettingsFsView,
+  getSettingsDicomdirView,
+} from './functions'
 import { 
   mdiAngleAcute,
   mdiArrowAll,
+  mdiCamera,
   mdiChartHistogram,
   mdiCheckboxIntermediate,
   mdiContentSaveOutline,   
@@ -52,6 +70,7 @@ import {
   mdiDelete,
   mdiEllipse,
   mdiEyedropper,
+  mdiFileCabinet,
   mdiFileDocument, 
   mdiFileCad, 
   mdiFolder,
@@ -61,6 +80,7 @@ import {
   mdiInformationOutline,
   mdiInvertColors,
   mdiMagnify,
+  mdiFolderOpen,
   mdiRefresh,
   mdiRectangle,
   mdiRuler,
@@ -75,6 +95,8 @@ import './App.css'
 
 log()
 
+//localStorage.setItem("debug", "cornerstoneTools")
+
 const drawerWidth = 240
 const iconColor = '#FFFFFF'
 let iconTool = null
@@ -85,18 +107,23 @@ const styles = theme => ({
         backgroundColor: theme.palette.common.black,
     },
   },
+
   grow: {
     flexGrow: 1,
   },
+
   root: {
     display: 'flex',
   },
+
   menuButton: {
     marginRight: theme.spacing(2),
   },
+
   title: {
     flexGrow: 1,
   },
+
   appBar: {
     position: 'relative',
     zIndex: theme.zIndex.drawer + 1,
@@ -105,6 +132,7 @@ const styles = theme => ({
       duration: theme.transitions.duration.leavingScreen,
     }),
   },
+
   appBarShift: {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
@@ -117,11 +145,13 @@ const styles = theme => ({
   hide: {
     display: 'none',
   },
+
   drawer: {
     width: drawerWidth,
     flexShrink: 0,
     whiteSpace: 'nowrap',
   },
+
   drawerOpen: {
     width: drawerWidth,
     transition: theme.transitions.create('width', {
@@ -129,6 +159,7 @@ const styles = theme => ({
       duration: theme.transitions.duration.enteringScreen,
     }),
   },
+
   drawerClose: {
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
@@ -149,6 +180,11 @@ const styles = theme => ({
     padding: theme.spacing(3),
   },
 
+  listItemText: {
+    fontSize: '0.85em',
+    marginLeft: '-20px'
+  },
+
 })
 
 class App extends PureComponent {
@@ -156,8 +192,14 @@ class App extends PureComponent {
   constructor(props) {
     super(props)
     this.file = null
+    this.url = null
+
     this.fileOpen = React.createRef()
     this.showFileOpen = this.showFileOpen.bind(this)
+
+    this.openDicomdir = React.createRef()
+    this.showOpenDicomdir = this.showOpenDicomdir.bind(this)
+    
     this.openUrlField = React.createRef()
     
     this.dicomViewersRefs = []
@@ -195,7 +237,12 @@ class App extends PureComponent {
     visibleMeasure: false,
     visibleClearMeasureDlg: false,
     visibleAbout: false,
+    visibleDicomdir: false,
+    visibleFileManager: false,
+    visibleZippedFileDlg: false,
+    visibleDownloadZipDlg: false,
     toolState: 1,
+    //loading: 0,
   }
 
   setDcmViewer = (index) => {
@@ -220,17 +267,83 @@ class App extends PureComponent {
   getActiveDcmViewer = () => {
     return this.dicomViewersRefs[this.props.activeDcmIndex]
   }  
-
+  
+  toggleFileManager = () => {
+    if (getSettingsFsView() === 'left') {
+      this.setState({visibleMainMenu: false, visibleFileManager: !this.state.visibleFileManager})
+    } else {
+      this.setState({visibleFileManager: !this.state.visibleFileManager})
+    }
+  }
+  
   showFileOpen() {
     this.props.isOpenStore(false)
     this.fileOpen.current.click()
   }
 
   handleOpenFile = (filesSelected) => {
-    this.hideMainMenu()
+    //this.hideMainMenu()
     const file = filesSelected[0]
+    console.log('file: ', file)
+    if (file.type === 'application/x-zip-compressed') {
+      //this.props.setFsZippedFile(file)
+      /*const zip = new JSZip()
+      zip.loadAsync(file).then((contents) => {
+        Object.keys(contents.files).forEach((filename) => {
+            console.log('zip file: ', filename)
+            zip.file(filename).async('nodebuffer').then((content) => {
+              console.log('zip content: ', content)
+            })
+        })
+      })*/
+      this.file = file
+      this.url = null
+      this.setState({visibleZippedFileDlg: true})
+    } else {
+      this.props.setLocalfileStore(file)
+      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
+      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openfile', file)      
+    }
+  }
+
+  handleOpenFs = (fsItem) => {
+    this.hideMainMenu()
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
+    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openfs', fsItem)
+  }
+
+  handleOpenFileDicomdir = (file) => {
+    this.hideMainMenu()
+    this.props.setLocalfileStore(file)
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openfile', file)
+  }
+
+  showOpenDicomdir() {
+    this.openDicomdir.current.click()
+  }
+
+  handleOpenDicomdir(files) {
+    this.setState({ visibleDicomdir: false }, () => {
+      let dicomdir = null
+      let datafiles = []
+      for (let i=0; i < files.length; i++) {
+        if (files[i].webkitRelativePath.includes('DICOMDIR')) {
+          dicomdir = files[i]
+        } else {
+          datafiles.push(files[i])
+        }
+      }
+      if (dicomdir !== null) {
+        this.props.setDicomdirStore({origin: 'local', dicomdir: dicomdir, files: datafiles})
+        this.toggleDicomdir()
+      }
+    })
+  }
+
+  handleOpenFsDicomdir = (fsItem) => {
+    this.props.setDicomdirStore({origin: 'fs', dicomdir: fsItem, files: []})
+    this.toggleDicomdir()
   }
 
   componentDidMount() {
@@ -246,7 +359,13 @@ class App extends PureComponent {
   
 
   toggleMainMenu = () => {
-    this.setState({ visibleMainMenu: !this.state.visibleMainMenu })
+    const visibleMainMenu = this.state.visibleMainMenu
+    //const visibleFileManager = this.state.visibleFileManager
+    if (getSettingsFsView() === 'left') {
+      this.setState({ visibleMainMenu: !visibleMainMenu, visibleFileManager: false })
+    } else {
+      this.setState({ visibleMainMenu: !visibleMainMenu })
+    }
   }
   
   showMainMenu = () => {
@@ -266,7 +385,12 @@ class App extends PureComponent {
     const visible = !this.state.visibleHeader
     this.setState({ visibleHeader: visible })
     if (visible) 
-      this.setState({ visibleMeasure: false, visibleToolbox: false })    
+      this.setState({ 
+        visibleMeasure: false, 
+        visibleToolbox: false, 
+        visibleDicomdir: false, 
+        visibleFileManager: false 
+      })    
   }
 
 
@@ -274,7 +398,12 @@ class App extends PureComponent {
     const visible = !this.state.visibleToolbox
     this.setState({ visibleToolbox: visible })
     if (visible) 
-      this.setState({ visibleMeasure: false, visibleHeader: false })
+      this.setState({ 
+        visibleMeasure: false, 
+        visibleHeader: false, 
+        visibleDicomdir: false, 
+        visibleFileManager: false 
+      })
   }
 
   saveMeasure = () => {
@@ -285,7 +414,12 @@ class App extends PureComponent {
     const visible = !this.state.visibleMeasure
     this.setState({ visibleMeasure: visible })
     if (visible) 
-      this.setState({ visibleToolbox: false, visibleHeader: false })
+      this.setState({ 
+        visibleToolbox: false, 
+        visibleHeader: false, 
+        visibleDicomdir: false, 
+        visibleFileManager: false 
+      })
   }
 
   hideMeasure = () => {
@@ -295,6 +429,21 @@ class App extends PureComponent {
   handleVisibilityMeasure = (visibleMeasure) => {
     this.setState({ visibleMeasure })
   }
+
+
+  toggleDicomdir = () => {
+    const visible = !this.state.visibleDicomdir
+    console.log('toggleDicomdir: ', visible)
+    this.setState({ visibleDicomdir: visible })
+    if (visible) 
+      this.setState({ 
+        visibleMeasure: false, 
+        visibleToolbox: false, 
+        visibleHeader: false, 
+        visibleFileManager: false
+      })
+  }
+  
 
   clearMeasure = () => {
     this.showClearMeasureDlg()
@@ -314,23 +463,57 @@ class App extends PureComponent {
   }
 
 
+  showZippedFileDlg = () => {
+    this.setState({ visibleZippedFileDlg: true })
+  }  
+
+  hideZippedFileDlg = () => {
+      this.setState({ visibleZippedFileDlg: false })
+  }
+
+  confirmZippedFileDlg = () => {
+    this.hideZippedFileDlg()
+    this.setState({ visibleFileManager: true }, () => {
+      console.log('this.url: ', this.url)
+      if (this.url !== null) {
+        this.setState({visibleDownloadZipDlg: true})
+      } else {
+        this.props.setFsZippedFile(this.file)
+      }
+    })
+  }
+
+
   showAbout = () => {
     this.setState({ visibleAbout: !this.state.visibleAbout })
   }
-
   
   showSettings = () => {
-    this.setState({ visibleMainMenu: false, visibleSettings: true, visibleToolbar: false, position: 'right' });
+    this.setState({ 
+      visibleMainMenu: false, 
+      visibleSettings: true, 
+      visibleToolbar: false, 
+      position: 'right' 
+    })
   }
 
   hideSettings = () => {
-    this.setState({ visibleMainMenu: true, visibleSettings: false, visibleToolbar: true })
+    this.setState({ 
+      visibleMainMenu: true, 
+      visibleSettings: false, 
+      visibleToolbar: true,
+      visibleFileManager: false,
+      visibleDicomdir: false, 
+    })
   }
 
   handleVisibilitySettings = (visibleSettings) => {
     this.setState({ visibleSettings });
   }
 
+  hideDownloadZipDlg = () => {
+    this.setState({ visibleDownloadZipDlg: false })
+  }
 
   showOpenUrl = () => {
     this.setState({ visibleOpenUrl: true })
@@ -341,7 +524,16 @@ class App extends PureComponent {
       () => {
         if (openDlg) {
           this.hideMainMenu()
-          return(this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openurl', this.openUrlField.value))
+          this.file = null
+          this.url = this.openUrlField.value
+          //console.log('this.url :', this.url)
+          //const ext = getFileExtReal(this.url)
+          //console.log('ext :', ext)
+          if (getFileExtReal(this.url) === 'zip') {
+            this.setState({visibleZippedFileDlg: true})
+          } else {
+            return this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openurl', this.openUrlField.value)
+          }
         } 
     })
   }
@@ -363,7 +555,8 @@ class App extends PureComponent {
   }
 
   clear = () => {  
-    this.setState({openImageEdit: false, visibleToolbox: false, visibleMeasure: false, visibleHeader: false})
+    this.setState({openImageEdit: false, visibleToolbox: false, visibleMeasure: false, visibleHeader: false, visibleDicomdir: false})
+    this.props.setDicomdirStore(null)
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
   }
 
@@ -376,7 +569,6 @@ class App extends PureComponent {
   }
 
   changeLayout = (row, col) => {
-    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
     // if reduce the grid clear the unused views
     if (row < this.props.layout[0] || col < this.props.layout[1]) {
       this.layoutGridClick(0)
@@ -385,14 +577,12 @@ class App extends PureComponent {
           if ((i+1 > row) || (j+1 > col)) {
             const index = i*4+j
             if (this.dicomViewersRefs[index] !== undefined) {  
-              //console.log(`clear view [${i},${j}], index: ${index}`)
               this.dicomViewersRefs[index].runTool('clear')
              }
           }
         }
       }
     }
-    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)  
     this.props.setLayoutStore(row, col)
   }
 
@@ -509,8 +699,10 @@ class App extends PureComponent {
   }
 
   getFileName = (dcmViewer) => {
-    if (dcmViewer.localfile !== null) {
-      return dcmViewer.localfile.name
+    if (dcmViewer.fsItem !== null) {
+      return dcmViewer.fsItem.name
+    } else if (dcmViewer.localfile !== null) {
+      return getFileNameCorrect(dcmViewer.localfile.name)
     } else {
       return dcmViewer.localurl.substring(dcmViewer.localurl.lastIndexOf('/')+1)
     }
@@ -533,7 +725,13 @@ class App extends PureComponent {
             {this.getFileName(dcmViewer)}
           </Typography>
         )
-      else
+      else if (this.props.dicomdir !== null) {
+        return (
+          <Typography variant="overline" className={classes.title}>
+            {this.props.dicomdir.dicomdir.webkitRelativePath}
+          </Typography>
+        )
+      } else
         return (
           <Typography variant="overline" className={classes.title}>
             <strong>U</strong>niversal <strong>D</strong>icom <strong>V</strong>iewer
@@ -547,7 +745,11 @@ class App extends PureComponent {
 
     const { classes } = this.props
 
+    const primaryClass = {primary:classes.listItemText}
+    const iconSize = '1.2rem'
+    
     const isOpen = this.props.isOpen[this.props.activeDcmIndex]
+    const isDicomdir = this.props.dicomdir !== null
 
     const openImageEdit = this.state.openImageEdit
     const visibleMainMenu = this.state.visibleMainMenu
@@ -556,6 +758,11 @@ class App extends PureComponent {
     const visibleAbout = this.state.visibleAbout
     const visibleMeasure = this.state.visibleMeasure
     const visibleToolbox = this.state.visibleToolbox
+    const visibleDicomdir = this.state.visibleDicomdir
+    const visibleFileManager = this.state.visibleFileManager
+    const visibleClearMeasureDlg = this.state.visibleClearMeasureDlg
+    const visibleZippedFileDlg = this.state.visibleZippedFileDlg 
+    const visibleDownloadZipDlg = this.state.visibleDownloadZipDlg
     const visibleLayout = Boolean(this.state.anchorElLayout)
 
     let iconToolColor = this.state.toolState === 1 ? '#FFFFFF' : '#999999'
@@ -574,54 +781,66 @@ class App extends PureComponent {
             { this.appBarTitle(classes, isOpen, dcmViewer) }
             
             <div className={classes.grow} />
-            { !isOpen ? (
+            { !isOpen && !isDicomdir ? (
               <IconButton onClick={this.showAbout}>
-                <Icon path={mdiInformationOutline} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiInformationOutline} size={iconSize} color={iconColor} />
               </IconButton> 
              ) : null
             }            
             { iconTool !== null && this.props.tool !== null &&  isOpen ? (
                 <IconButton onClick={this.toolChange}>
-                  <Icon path={iconTool} size={'1.5rem'} color={iconToolColor} />
+                  <Icon path={iconTool} size={iconSize} color={iconToolColor} />
                 </IconButton>
               ) : null
             }
             { isOpen && dcmViewer.numberOfFrames > 1 &&  isOpen ? (
                 <IconButton onClick={this.cinePlayer}>
-                  <Icon path={mdiVideo} size={'1.5rem'} color={iconColor} />
+                  <Icon path={mdiVideo} size={iconSize} color={iconColor} />
                 </IconButton> 
               ): null
             }
             { isOpen ? (
               <IconButton onClick={this.resetImage}>
-                <Icon path={mdiRefresh} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiRefresh} size={iconSize} color={iconColor} />
               </IconButton>
              ) : null
             }
             { isOpen ? (
               <IconButton color="inherit" onClick={this.saveShot}>
-                <PhotoCameraIcon />
+                <Icon path={mdiCamera} size={iconSize} color={iconColor} />
               </IconButton>
              ) : null
             }
             { isOpen ? (
               <IconButton color="inherit" onClick={this.toggleToolbox}>
-                <Icon path={mdiToolbox} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiToolbox} size={iconSize} color={iconColor} />
               </IconButton>
               ) : null
             }              
             { isOpen ? (
               <IconButton color="inherit" onClick={this.toggleMeasure}>
-                <Icon path={mdiFileCad} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiFileCad} size={iconSize} color={iconColor} />
               </IconButton>
               ) : null
             }  
             { isOpen && dcmViewer.isDicom ? (
               <IconButton color="inherit" onClick={this.toggleHeader}>
-                <Icon path={mdiFileDocument} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiFileDocument} size={iconSize} color={iconColor} />
               </IconButton>
               ) : null
             }  
+            { isDicomdir ? (
+              <IconButton color="inherit" onClick={this.toggleDicomdir}>
+                <Icon path={mdiFolderOpen} size={iconSize} color={iconColor} />
+              </IconButton>
+              ) : null
+            }    
+            { isOpen ? (
+              <IconButton color="inherit" onClick={this.toggleFileManager}>
+                <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
+              </IconButton>
+              ) : null
+            }                        
           </Toolbar>
         </AppBar>
 
@@ -636,86 +855,96 @@ class App extends PureComponent {
               <ListItem button onClick={() => this.showAppBar()}>
                 <ListItemIcon><MenuIcon /></ListItemIcon>
                 <ListItemText primary='Tool Bar' />
-              </ListItem>              
+              </ListItem>    
+              <ListItem button onClick={() => this.toggleFileManager()}>
+                <ListItemIcon><Icon path={mdiFileCabinet} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='File Manager ...' />
+              </ListItem>                        
               <ListItem button onClick={() => this.showFileOpen()}>
-                <ListItemIcon><Icon path={mdiFolder} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Open File ...' />
+                <ListItemIcon><Icon path={mdiFolder} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Open File ...' />
               </ListItem>
               <ListItem button onClick={() => this.showOpenUrl()}>
-                <ListItemIcon><Icon path={mdiWeb} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Open URL ...' />
+                <ListItemIcon><Icon path={mdiWeb} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Open URL ...' />
               </ListItem>
+              { isInputDirSupported() && !isMobile?
+              <ListItem button onClick={() => this.showOpenDicomdir()}>
+                <ListItemIcon><Icon path={mdiFolderOpen} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Open DICOMDIR ...' />
+              </ListItem>    
+              : null }
               <ListItem button onClick={() => this.clear()}>
-                <ListItemIcon><Icon path={mdiDelete} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Clear' />
+                <ListItemIcon><Icon path={mdiDelete} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Clear' />
               </ListItem>  
               <ListItem button onClick={this.handleLayout}>
-                <ListItemIcon><Icon path={mdiViewGridPlusOutline} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Layout' />              
+                <ListItemIcon><Icon path={mdiViewGridPlusOutline} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Layout' />              
               </ListItem>   
               <ListItem button onClick={() => this.showSettings()}>
-                <ListItemIcon><Icon path={mdiSettings} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Settings' />
+                <ListItemIcon><Icon path={mdiSettings} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Settings' />
               </ListItem>                
               <Divider />
               <ListItem button onClick={() => this.toolExecute('notool')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiCursorDefault} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='No tool' />
+                <ListItemIcon><Icon path={mdiCursorDefault} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='No tool' />
               </ListItem>         
               <ListItem button onClick={() => this.toolExecute('Wwwc')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiArrowAll} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='WW/WC' />
+                <ListItemIcon><Icon path={mdiArrowAll} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='WW/WC' />
               </ListItem>  
               <ListItem button onClick={() => this.toolExecute('Pan')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiCursorPointer} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Pan' />
+                <ListItemIcon><Icon path={mdiCursorPointer} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Pan' />
               </ListItem>  
               <ListItem button onClick={() => this.toolExecute('Zoom')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiMagnify} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Zoom' />
+                <ListItemIcon><Icon path={mdiMagnify} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Zoom' />
               </ListItem>      
               <ListItem button onClick={() => this.toolExecute('Magnify')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiCheckboxIntermediate} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Magnify' />
+                <ListItemIcon><Icon path={mdiCheckboxIntermediate} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Magnify' />
               </ListItem>       
               <ListItem button onClick={() => this.toolExecute('Length')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiRuler} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Length' />
+                <ListItemIcon><Icon path={mdiRuler} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Length' />
               </ListItem>        
               <ListItem button onClick={() => this.toolExecute('Probe')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiEyedropper} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Probe' />
+                <ListItemIcon><Icon path={mdiEyedropper} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Probe' />
               </ListItem> 
               <ListItem button onClick={() => this.toolExecute('Angle')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiAngleAcute} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Angle' />
+                <ListItemIcon><Icon path={mdiAngleAcute} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Angle' />
               </ListItem>  
               <ListItem button onClick={() => this.toolExecute('EllipticalRoi')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiEllipse} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Elliptical Roi' />
+                <ListItemIcon><Icon path={mdiEllipse} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Elliptical Roi' />
               </ListItem>     
               <ListItem button onClick={() => this.toolExecute('RectangleRoi')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiRectangle} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Rectangle Roi' />
+                <ListItemIcon><Icon path={mdiRectangle} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Rectangle Roi' />
               </ListItem> 
               <ListItem button onClick={() => this.toolExecute('FreehandRoi')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiGesture} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Freehand Roi' />
+                <ListItemIcon><Icon path={mdiGesture} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Freehand Roi' />
               </ListItem> 
               <ListItem button onClick={() => this.toolExecute('Histogram')} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiChartHistogram} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Histogram' />
+                <ListItemIcon><Icon path={mdiChartHistogram} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Histogram' />
               </ListItem>  
               <ListItem button onClick={() => this.toggleImageEdit()} disabled={!isOpen}>
-                <ListItemIcon><Icon path={mdiImageEdit} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                <ListItemText primary='Edit' />
+                <ListItemIcon><Icon path={mdiImageEdit} size={iconSize} color={iconColor} /></ListItemIcon>
+                <ListItemText classes={primaryClass} primary='Edit' />
                 {openImageEdit ? <ExpandLess /> : <ExpandMore />}
               </ListItem>          
               <Collapse in={openImageEdit} timeout="auto" unmountOnExit>
                 <List  dense={true} component="div">
                   <ListItem button style={{paddingLeft: 30}} onClick={() => this.toolExecute('Invert')}>
-                    <ListItemIcon><Icon path={mdiInvertColors} size={'1.5rem'} color={iconColor} /></ListItemIcon>
-                    <ListItemText primary="Invert" />
+                    <ListItemIcon><Icon path={mdiInvertColors} size={iconSize} color={iconColor} /></ListItemIcon>
+                    <ListItemText classes={primaryClass} primary="Invert" />
                   </ListItem>
                 </List>
               </Collapse>
@@ -745,10 +974,10 @@ class App extends PureComponent {
               </Typography>
               <div className={classes.grow} />
               <IconButton color="inherit" onClick={this.saveMeasure} edge="end">
-                <Icon path={mdiContentSaveOutline} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiContentSaveOutline} size={iconSize} color={iconColor} />
               </IconButton>
               <IconButton color="inherit" onClick={this.clearMeasure} edge="end">
-                <Icon path={mdiTrashCanOutline} size={'1.5rem'} color={iconColor} />
+                <Icon path={mdiTrashCanOutline} size={iconSize} color={iconColor} />
               </IconButton>
             </Toolbar>
             <div>  
@@ -770,21 +999,63 @@ class App extends PureComponent {
           </div>
         </Drawer>          
 
-        {visibleSettings ? <Settings onClose={this.hideSettings}/>: null}
+        <Drawer
+          variant="persistent"
+          anchor={getSettingsDicomdirView()}
+          open={visibleDicomdir}
+          onClose={this.toggleDicomdir}
+        >
+          <div>
+            <div>  
+              {visibleDicomdir ? <Dicomdir onOpenFile={this.handleOpenFileDicomdir} onOpenFs={this.handleOpenFs} /> : null} 
+            </div>
+          </div>
+        </Drawer>   
 
-        {visibleAbout ? <AboutDlg onClose={this.showAbout}/>: null}
+        <Drawer
+          variant="persistent"
+          anchor={getSettingsFsView()}
+          open={visibleFileManager}
+          onClose={this.toggleFileManager}
+        >
+          <div>
+            <div>
+              {visibleFileManager ? <FsUI onOpen={this.handleOpenFs} onOpenDicomdir={this.handleOpenFsDicomdir} color={iconColor} /> : null}
+            </div>
+          </div>
+        </Drawer>   
+
+        {visibleSettings ? <Settings onClose={this.hideSettings}/> : null}
+
+        {visibleAbout ? <AboutDlg onClose={this.showAbout}/> : null}
+
+        {visibleDownloadZipDlg ? <DownloadZipDlg onClose={this.hideDownloadZipDlg} url={this.url} /> : null}
 
         <Dialog
-            open={this.state.visibleClearMeasureDlg}
+            open={visibleClearMeasureDlg}
             onClose={this.hideClearMeasureDlg}
-            aria-labelledby="alert-dialog-title"
         >
-            <DialogTitle id="alert-dialog-title">{"Are you sure to remove all the measurements?"}</DialogTitle>
+            <DialogTitle>{"Are you sure to remove all the measurements?"}</DialogTitle>
             <DialogActions>
                 <Button onClick={this.hideClearMeasureDlg}>
                     Cancel
                 </Button>
                 <Button onClick={this.confirmClearMeasureDlg} autoFocus>
+                    Ok
+                </Button>
+            </DialogActions>
+        </Dialog>
+
+        <Dialog
+            open={visibleZippedFileDlg}
+            onClose={this.hideZippedFileDlg}
+        >
+            <DialogTitle>{"This is a zipped file, would you import into sandboxed file system?"}</DialogTitle>
+            <DialogActions>
+                <Button onClick={this.hideZippedFileDlg}>
+                    Cancel
+                </Button>
+                <Button onClick={this.confirmZippedFileDlg} autoFocus>
                     Ok
                 </Button>
             </DialogActions>
@@ -845,10 +1116,21 @@ class App extends PureComponent {
         <div>
           <input
             type="file"
-            id="my_file"
+            id="file_open"
             style={{ display: "none" }}
             ref={this.fileOpen}
             onChange={e => this.handleOpenFile(e.target.files)}
+          />
+        </div>
+
+        <div>
+          <input
+            type="file"
+            id="file_dicomdir"
+            style={{ display: "none" }}
+            ref={this.openDicomdir}
+            onChange={e => this.handleOpenDicomdir(e.target.files)}
+            webkitdirectory="" mozdirectory="" directory="" multiple
           />
         </div>
     
@@ -859,22 +1141,28 @@ class App extends PureComponent {
 
 const mapStateToProps = (state) => {
   return {
+    localfileStore: state.localfileStore,
     isOpen: state.isOpen,
     tool: state.tool,
     activeDcmIndex: state.activeDcmIndex,
     measurements: state.measurements,
-    layout: state.layout
+    layout: state.layout,
+    dicomdir: state.dicomdir,
+    fsZippedFile: state.fsZippedFile,
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
+    setLocalfileStore: (file) => dispatch(localfileStore(file)),
     toolStore: (tool) => dispatch(dcmTool(tool)),
     isOpenStore: (value) => dispatch(dcmIsOpen(value)),
     setActiveDcm: (dcm) => dispatch(activeDcm(dcm)),
     setActiveDcmIndex: (index) => dispatch(activeDcmIndex(index)),
     setActiveMeasurements: (measurements) => dispatch(activeMeasurements(measurements)),
     setLayoutStore: (row, col) => dispatch(setLayout(row, col)),
+    setDicomdirStore: (dicomdir) => dispatch(setDicomdir(dicomdir)),
+    setFsZippedFile: (file) => dispatch(setZippedFile(file))
   }
 }
 

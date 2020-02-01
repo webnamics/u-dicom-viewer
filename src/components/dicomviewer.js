@@ -1,4 +1,5 @@
 import React from "react"
+import {connect} from 'react-redux'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
@@ -15,21 +16,34 @@ import * as cornerstoneFileImageLoader from "cornerstone-file-image-loader"
 import * as cornerstoneWebImageLoader from "cornerstone-web-image-loader"
 import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader"
 import * as dicomParser from 'dicom-parser'
-import {connect} from 'react-redux'
-import {clearStore, dcmIsOpen, activeDcm, dcmTool, activeMeasurements} from '../actions'
+import * as blobUtil from 'blob-util'
 import {uids} from '../constants/uids'
 import { SETTINGS_SAVEAS } from '../constants/settings'
 import OpenUrlDlg from './OpenUrlDlg'
 import CinePlayer from './CinePlayer'
-import { getSettingsOverlay } from '../functions'
 import { isMobile } from 'react-device-detect'
 import { import as csTools } from 'cornerstone-tools'
 import db from '../db/db'
-import { isFileImage } from '../functions'
-import { isUrlImage } from '../functions'
+import fs from '../fs/fs'
+import {
+  clearStore, 
+  dcmIsOpen, 
+  activeDcm, 
+  dcmTool, 
+  activeMeasurements,
+  doFsRefresh} 
+from '../actions'
+import {
+  getFileName,
+  getSettingsOverlay,
+  isFileImage,
+  isFsFileImage,
+  isUrlImage,
+  getSettingsSaveInto
+} from '../functions'
+
 const scrollToIndex = csTools('util/scrollToIndex')
-
-
+/*
 function getBlobUrl(url) {
   const baseUrl = window.URL || window.webkitURL;
   const blob = new Blob([`importScripts('${url}')`], {type: "application/javascript"});
@@ -44,6 +58,7 @@ let codecsUrl = getBlobUrl(
   // "https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderCodecs.js"
 )
 // See componentDidMount line 110 for initialization, registration
+
 const config = {
   maxWebWorkers: 4, //
   //startWebWorkersOnDemand: true, //
@@ -59,12 +74,17 @@ const config = {
     }
   }
 }
+var config = {
+  maxWebWorkers: navigator.hardwareConcurrency || 1,
+  startWebWorkersOnDemand: false,
+}
+*/
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
 cornerstoneFileImageLoader.external.cornerstone = cornerstone
 cornerstoneWebImageLoader.external.cornerstone = cornerstone
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
-cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
+//cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
 cornerstoneTools.external.Hammer = Hammer
 cornerstoneTools.init()
@@ -78,6 +98,7 @@ class DicomViewer extends React.Component {
       super(props)
       this.localfile = null
       this.localurl = null
+      this.fsItem = null
       this.dicomImage = null
       this.imageId = null
       this.image = null
@@ -116,7 +137,6 @@ class DicomViewer extends React.Component {
     componentDidUpdate(previousProps) {
       const isOpen = this.props.isOpen[this.props.index]
       if (this.props.layout !== previousProps.layout && isOpen) {
-        //console.log('dicomImage: ', this.dicomImage)
         cornerstone.resize(this.dicomImage)        
       }
     }
@@ -225,7 +245,7 @@ class DicomViewer extends React.Component {
     }
 
     onMeasurementAdded = (e) => {
-      console.log('cornerstonetoolsmeasurementadded: ', e.detail.measurementData)
+      //console.log('cornerstonetoolsmeasurementadded: ', e.detail.measurementData)
       if (this.props.tool !== "Angle") return
       const measure = {
         tool: this.props.tool,
@@ -238,17 +258,14 @@ class DicomViewer extends React.Component {
     }
 
     onMeasurementCompleted = (e) => {
-      console.log('cornerstonetoolsmeasurementcompleted: ', e.detail.measurementData)
-      
+      //console.log('cornerstonetoolsmeasurementcompleted: ', e.detail.measurementData)
       const measure = {
         tool: this.props.tool,
         note: '',
         data: e.detail.measurementData
       }
-      //this.props.measurementStore(measure)
       this.measurementSave(measure)
       this.props.setActiveMeasurements(this.measurements)
-      //console.log('this.measurements: ', this.measurements)
     }
     
     onErrorOpenImageClose = () => {
@@ -259,17 +276,17 @@ class DicomViewer extends React.Component {
       this.setState({errorOnCors: false})
     }    
 
-    loadImage = (localfile, url=undefined) => {
+    loadImage = (localfile, url=undefined, fsItem=undefined) => {
       //console.log('loadImage, localfile: ', localfile)
       //console.log('loadImage, url: ', url)
 
-      if (localfile === undefined && url === undefined) return
+      if (localfile === undefined && url === undefined && fsItem === undefined) return
       
-      if (localfile !== undefined) {
-        //this.props.localfileStore(localfile)
+      if (fsItem !== undefined) {
+        this.fsItem = fsItem
+      } else if (localfile !== undefined) {
         this.localfile = localfile
       } else {
-        //this.props.urlStore(url)
         this.localurl = url
       }
  
@@ -289,7 +306,7 @@ class DicomViewer extends React.Component {
         //const file = "file:///C:/GARBAGE/_DCM/"+localfile.name
         //console.log('image: ', file)
         cornerstone.loadImage(url).then(image => {
-          console.log('loadImage, image from url: ', image)
+          //console.log('loadImage, image from url: ', image)
 
           this.hideOpenUrlDlg()
 
@@ -310,8 +327,13 @@ class DicomViewer extends React.Component {
           this.setState({errorOnOpenImage: "This is not a valid JPG or PNG file."})
         })
 
-      } else if (localfile !== undefined && isFileImage(localfile)) { // otherwise try to open as local image file (JPEG, PNG) 
-        imageId = cornerstoneFileImageLoader.fileManager.add(localfile)
+      } else if ((localfile !== undefined && isFileImage(localfile)) || (fsItem !== undefined && isFsFileImage(fsItem))) { // otherwise try to open as local image file (JPEG, PNG) 
+        //console.log('fsItem: ', fsItem)
+        if (fsItem !== undefined) {
+          imageId = cornerstoneFileImageLoader.fileManager.addBuffer(fsItem.data)
+        } else {
+          imageId = cornerstoneFileImageLoader.fileManager.add(localfile)
+        }
         cornerstone.loadImage(imageId).then(image => {
           //console.log('loadImage, image from local: ', image)
 
@@ -333,13 +355,15 @@ class DicomViewer extends React.Component {
 
       } else { // otherwise try to open as Dicom file
 
-        if (localfile !== undefined) {
+        if (fsItem !== undefined) {
+          imageId = cornerstoneWADOImageLoader.wadouri.fileManager.addBuffer(fsItem.data)
+        } else if (localfile !== undefined) {
           imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(localfile)
         } else { // it's a web dicom image
           imageId = "wadouri:"+url
         }
   
-        console.log('loadImage, imageId: ', imageId)
+        //console.log('loadImage, imageId: ', imageId)
 
         cornerstone.loadAndCacheImage(imageId).then(image => {
           //console.log('loadImage, image: ', image)
@@ -362,11 +386,10 @@ class DicomViewer extends React.Component {
             for(var i=0; i < this.numberOfFrames; ++i) {
               imageIds.push(imageId + "?frame="+i)
             }	
-            stack.imageIds = imageIds;
-            //console.log(stack.imageIds)
+            stack.imageIds = imageIds
           }
 
-          console.log('displayImage: ')
+          //console.log('displayImage: ')
           cornerstone.displayImage(element, image)
           //cornerstoneTools.mouseInput.enable(element);
           //cornerstoneTools.mouseWheelInput.enable(element);
@@ -462,6 +485,7 @@ class DicomViewer extends React.Component {
 //      this.disableAllTools()
       switch (toolName) {
         case 'openfile': {
+          console.log('openfile: ', opt)
           cornerstone.disable(this.dicomImage)
           this.setState({ file: opt })
           this.loadImage(opt)
@@ -472,6 +496,13 @@ class DicomViewer extends React.Component {
           this.showOpenUrlDlg(opt)
           break                 
         }
+        case 'openfs': {
+          console.log('openfs: ', opt)
+          cornerstone.disable(this.dicomImage)
+          this.setState({ file: opt })
+          this.loadImage(undefined, undefined, opt)
+          break   
+        }         
         case 'clear': {
           //if (this.state.visibleHistogram) this.runTool('Histogram')
           //console.log('this.dicomImage: ', this.dicomImage)
@@ -593,20 +624,47 @@ class DicomViewer extends React.Component {
         }
         case 'Invert': {
           const element = this.dicomImage
-
           const viewport = cornerstone.getViewport(element)
-
           viewport.invert = !viewport.invert
-          
           cornerstone.setViewport(element, viewport)
-
-          console.log('viewport: ', viewport)
-
           break 
         }         
         case 'saveas': {
             let type = localStorage.getItem(SETTINGS_SAVEAS)
-            cornerstoneTools.SaveAs(this.dicomImage, `${this.state.file.name}.${type}`, `image/${type}`)      
+            if (getSettingsSaveInto() === 'local') {
+              cornerstoneTools.SaveAs(this.dicomImage, `${this.state.file.name}.${type}`, `image/${type}`)   
+            } else { // store image into sandboxed file system
+              const canvas = document.getElementsByClassName('cornerstone-canvas')[0]
+              blobUtil.canvasToBlob(canvas, `image/${type}`).then(blob => {
+                blobUtil.blobToArrayBuffer(blob).then(arrayBuffer => {
+                  const name = getFileName(this.state.file.name)    
+                  let newName = name
+                  let counter = 1
+                  let done = false             
+                  do {
+                      let filename = `${newName}.${type}`
+                      const checkName = this.props.fsCurrentList.find(e => e.name === filename)
+                      if (checkName === undefined) {
+                          fs.transaction('rw', fs.files, async () => {
+                              await fs.files.add({
+                                  parent: this.props.fsCurrentDir,
+                                  name: filename,
+                                  type: type,
+                                  size: arrayBuffer.byteLength,
+                                  data: arrayBuffer
+                              })
+                          }).then(() => {
+                            this.props.makeFsRefresh()
+                          })
+                          done = true
+                      } else {
+                          newName = `${name} - ${counter}`
+                          counter++
+                      }
+                  } while (!done)
+                })
+              })
+            }  
           break
         }
         case 'cine': {
@@ -959,7 +1017,10 @@ const mapStateToProps = (state) => {
     tool: state.tool,
     activeDcmIndex: state.activeDcmIndex,
     measurements: state.measurements,
-    layout: state.layout
+    layout: state.layout,
+    fsCurrentDir: state.fsCurrentDir,
+    fsCurrentList: state.fsCurrentList,
+    sandboxedFile: state.sandboxedFile,
   }
 }
 
@@ -970,6 +1031,7 @@ const mapDispatchToProps = (dispatch) => {
     toolStore: (tool) => dispatch(dcmTool(tool)),
     setActiveDcm: (dcm) => dispatch(activeDcm(dcm)),
     setActiveMeasurements: (measurements) => dispatch(activeMeasurements(measurements)),
+    makeFsRefresh: (dcm) => dispatch(doFsRefresh()),
   }
 }
 
