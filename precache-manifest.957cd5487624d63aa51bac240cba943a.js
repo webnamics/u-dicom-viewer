@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "920b117df7be9dbd86ac44e889d569b6",
+    "revision": "87a70091ada4e8a127b6a8b7c21b9088",
     "url": "/u-dicom-viewer/index.html"
   },
   {
-    "revision": "2c94f2b1c794a66b0091",
+    "revision": "84a152ed1b0c4f320e9c",
     "url": "/u-dicom-viewer/static/css/main.5b250232.chunk.css"
   },
   {
@@ -12,8 +12,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/u-dicom-viewer/static/js/2.82b9a785.chunk.js"
   },
   {
-    "revision": "2c94f2b1c794a66b0091",
-    "url": "/u-dicom-viewer/static/js/main.a86c8a49.chunk.js"
+    "revision": "84a152ed1b0c4f320e9c",
+    "url": "/u-dicom-viewer/static/js/main.7fa2ac16.chunk.js"
   },
   {
     "revision": "47a51e2081b6eae16985",
