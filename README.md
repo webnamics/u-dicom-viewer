@@ -57,7 +57,7 @@
 <ul>
 	<li><a href="https://github.com/dfahlander/Dexie.js/">Dexie.js</a>, wrapper library for indexedDB - the standard database in the browser.</li>
 	<li><a href="https://github.com/duskload/react-device-detect">react-device-detect</a>, detect device, and render view according to detected device type.</li>
-	<li><a href="https://material-ui.com/">react-md</a>, React Material Design - React components built with sass.</li>
+	<li><a href="https://material-ui.com/">Material-UI</a>, React components for faster and easier web development. Build your own design system, or start with Material Design.</li>
 	<li><a href="https://github.com/hammerjs/hammer.js/tree/master">hammer.js</a>, JavaScript library for detecting touch gestures.</li>
 	<li><a href="https://github.com/axios/axios">axios</a>, Promise based HTTP client for the browser and node.js.</li>
 	<li><a href="https://github.com/Stuk/jszip">JSZip</a>, Create, read and edit .zip files with Javascript.</li>

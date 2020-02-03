@@ -550,7 +550,7 @@ class FsUI extends PureComponent {
     closeSaveAs = () => {
         const filename = `${this.saveAsField.value}.zip`
         this.setState({ visibleOSaveAsDlg: false },
-          () => {
+            () => {
             let zip = new JSZip()
             let listItems = []
             fs.files.where('parent').startsWithIgnoreCase(this.props.fsCurrentDir).each((e) => {
@@ -566,11 +566,17 @@ class FsUI extends PureComponent {
                 })
             })
         })
-      }    
+    }    
 
-    styleComponent = () => {
+    mouseDown = (e, item) => {
+        this.timer = setTimeout(() => { 
+            this.itemDoubleClick(e, item)
+        }, 500)
+    }
 
-    }  
+    mouseUp = (e) => {
+        clearTimeout(this.timer)
+    }
 
     render() {   
         const { classes } = this.props
@@ -695,6 +701,10 @@ class FsUI extends PureComponent {
                                         selected={isItemSelected}
                                         onClick={(e) => {this.itemClick(e, row)}}
                                         onDoubleClick={(e) => {this.itemDoubleClick(e, row)}}
+                                        onTouchStart={(e) => this.mouseDown(e, row)} 
+                                        onTouchEnd={(e) => this.mouseUp(e, row)}
+                                        onMouseDown={(e) => this.mouseDown(e, row)} 
+                                        onMouseUp={(e) => this.mouseUp(e, row)}
                                     >
                                         <TableCell component="th" scope="row">
                                             {row.name}
