@@ -74,11 +74,11 @@ class MeasureItem extends PureComponent {
     render() {    
         const { classes } = this.props
 
-        let item = this.props.item
+        const item = this.props.item
         let index = this.props.index
         let pText = ''
         let sText = ''
-        
+        //console.log('item: ', item)
         switch (item.tool) {
             case 'Length':
                 pText = `${item.data.length.toFixed(2)} ${item.data.unit}`
@@ -100,17 +100,20 @@ class MeasureItem extends PureComponent {
                 pText = <div>
                             <div> A: {item.data.cachedStats.area.toFixed(2)} mm² </div>
                             <div> M: {item.data.cachedStats.mean.toFixed(2)} {item.data.unit} </div>
-                    <       div> SD: {item.data.cachedStats.stdDev.toFixed(2)} {item.data.unit} </div>
+                            <div> SD: {item.data.cachedStats.stdDev.toFixed(2)} {item.data.unit} </div>
                         </div>
                 sText = item.note
                 break          
             case 'FreehandRoi':
+                //console.log('item: ', item.data.area)
+                //if (item.data.area !== undefined) {
                 pText = <div>
                             <div> A: {item.data.area.toFixed(2)} mm² </div>
                             <div> M: {item.data.meanStdDev.mean.toFixed(2)} {item.data.unit} </div>
-                    <       div> SD: {item.data.meanStdDev.stdDev.toFixed(2)} {item.data.unit} </div>
+                            <div> SD: {item.data.meanStdDev.stdDev.toFixed(2)} {item.data.unit} </div>
                         </div>
                 sText = item.note
+                //}
                 break                                  
             default:
                 break    

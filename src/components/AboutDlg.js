@@ -51,7 +51,7 @@ const AboutDlg = ({ onClose }) => {
                     </ListItem>    
                     <ListItem>
                         <ListItemText 
-                            primary='Version Number:' 
+                            primary='Version:' 
                             secondary={version} 
                         />
                     </ListItem>                        

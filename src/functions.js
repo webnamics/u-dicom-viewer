@@ -14,6 +14,32 @@ import {
     SETTINGS_DICOMDIRVIEW,    
 } from './constants/settings'
 
+
+export function getPixelSpacing(image, index) {
+    const value = image.data.string('x00280030')
+    if (value === undefined) {
+        return
+    }
+    const pixelSpacing = value.split('\\')
+    return pixelSpacing[index]
+}
+
+export function getSpacingBetweenSlice(image) {
+    const value = image.data.string('x00180088')
+    if (value === undefined) {
+        return
+    }
+    return parseFloat(value)
+}
+
+  
+export function capitalize(str) {
+    if (str === undefined) 
+        return ''
+    else 
+        return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 // To see the console output set the key 'debug-u-dicom-viewer' in 
 // 'Storage->Local Storage' panel of your browser Develop Tool
 export function log() {

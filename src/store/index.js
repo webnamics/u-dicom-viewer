@@ -2,12 +2,14 @@ import {createStore} from 'redux'
 import storeReducer from '../reducers/index'
 
 let initialState = {
-    localfile: null,
+    localFile: null,
+    fsFile: null,
+    files: null,
     isOpen: new Array(16).fill(false),
     tool: null,
     activeDcmIndex: 0,
     activeDcm: null,
-    images: [],
+    //images: [],
     measurements: [],
     layout: [1,1], // first element represents the rows, second the columns
     dicomdir: null,
@@ -15,7 +17,9 @@ let initialState = {
     fsCurrentList: [],
     fsZippedFile: null,
     fsRefresh: false,
-    sandboxedFile: null,
+    volume: null,
+    //lut: null,
+    //sandboxedFile: null,
 }
 
 const store = createStore(storeReducer, initialState,

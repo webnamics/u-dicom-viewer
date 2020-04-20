@@ -1,6 +1,6 @@
 {
   "name": "u-dicom-viewer",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "homepage": "https://webnamics.github.io/u-dicom-viewer/",
   "dependencies": {
@@ -13,7 +13,7 @@
     "axios": "^0.19.2",
     "blob-util": "^2.0.2",
     "cornerstone-core": "^2.3.0",
-    "cornerstone-file-image-loader": "^0.2.0",
+    "cornerstone-file-image-loader": "^0.3.0",
     "cornerstone-math": "^0.1.8",
     "cornerstone-tools": "^4.9.1",
     "cornerstone-wado-image-loader": "git+https://github.com/webnamics/cornerstoneWADOImageLoader.git",
@@ -38,6 +38,8 @@
     "react-router": "^5.0.1",
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.1.1",
+    "react-virtualized": "^9.21.2",
+    "react-window": "^1.8.5",
     "redux": "^4.0.5",
     "serialize-javascript": "^2.1.2",
     "set-value": "2.0.1",

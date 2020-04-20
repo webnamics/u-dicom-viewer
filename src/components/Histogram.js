@@ -4,10 +4,10 @@ import React, { PureComponent } from 'react'
 import Slider from '@material-ui/core/Slider'
 //import HighlightOffIcon from '@material-ui/icons/HighlightOff'
 import {connect} from 'react-redux'
-import * as cornerstone from 'cornerstone-core'
-import { import as csTools } from 'cornerstone-tools'
+//import * as cornerstone from 'cornerstone-core'
+// import { import as csTools } from 'cornerstone-tools'
 
-const getRGBPixels = csTools('util/getRGBPixels')
+// const getRGBPixels = csTools('util/getRGBPixels')
 
 const HIST_WIDTH = 256
 const HIST_HEIGHT = 128
@@ -65,17 +65,27 @@ class Histogram extends PureComponent {
     }
 
     componentDidMount() {
-      //console.log('componentDidMount: ', this.props.activeDcmIndex)
-      this.image = this.props.activeDcm.image
-      this.element = this.props.activeDcm.element
-      this.isDicom = this.props.activeDcm.isDicom
-      this.pixelData = this.props.activeDcm.image.getPixelData()
-      this.updateCanvas()  
+      //console.log('Histogram - componentDidMount: ')
+      //this.image = this.props.activeDcm.image
+      //this.element = this.props.activeDcm.element
+      //this.isDicom = this.props.activeDcm.isDicom
+      //this.pixelData = this.props.activeDcm.image.getPixelData()
+      const canvasH = this.canvasHistogram.current
+      const ctxH = this.canvasHistogram.current.getContext("2d")
+      ctxH.translate(0, canvasH.height)
+      ctxH.scale(1, -1)
+
+      this.updateCanvas()     
     }
     
     componentDidUpdate() {
-      //console.log('componentDidUpdate: ')
-      //this.updateCanvas() 
+      //console.log('Histogram - componentDidUpdate: ')
+      if (this.props.activeDcm === null) {
+        const ctxH = this.canvasHistogram.current.getContext("2d")
+        ctxH.clearRect(0, 0, ctxH.canvas.width, ctxH.canvas.height)
+        return
+      }
+      this.updateCanvas() 
     }
 
     getMousePos(canvas, evt) {
@@ -87,7 +97,7 @@ class Histogram extends PureComponent {
     }
 
     getRGBPixelsImage(x, y, width, height) {
-      //const image = this.props.image
+      const pixelData = this.props.activeDcm.image.getPixelData()
       const storedPixelData = []
       x = Math.round(x)
       y = Math.round(y)   
@@ -96,11 +106,11 @@ class Histogram extends PureComponent {
     
       for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
-          spIndex = ((row + y) * this.image.rows + (column + x)) * 4
-          const red = this.pixelData[spIndex]
-          const green = this.pixelData[spIndex + 1]
-          const blue = this.pixelData[spIndex + 2]
-          const alpha = this.pixelData[spIndex + 3]
+          spIndex = ((row + y) * this.props.activeDcm.image.rows + (column + x)) * 4
+          const red = pixelData[spIndex]
+          const green = pixelData[spIndex + 1]
+          const blue = pixelData[spIndex + 2]
+          const alpha = pixelData[spIndex + 3]
   
           storedPixelData[index++] = red
           storedPixelData[index++] = green
@@ -108,20 +118,36 @@ class Histogram extends PureComponent {
           storedPixelData[index++] = alpha
         }
       }
-    
       return storedPixelData
     }
 
+    getPixelsImage(x, y, width, height) {
+      const pixelData = this.props.activeDcm.image.getPixelData()
+      const storedPixelData = []
+      x = Math.round(x)
+      y = Math.round(y)   
+      let index = 0
+      let spIndex, row, column
+    
+      for (row = 0; row < height; row++) {
+        for (column = 0; column < width; column++) {
+          spIndex = ((row + y) * this.props.activeDcm.image.rows + (column + x)) 
+          storedPixelData[index++] = pixelData[spIndex]
+        }
+      }
+      return storedPixelData
+    }    
+
     getPixel(x, y) {
-      //const image = this.props.image
-      //const element = this.props.element
-      //const isDicom = this.props.isDicom
       let sp = []
-      if (this.isDicom) {
-        if (this.image.color) {
-          sp = getRGBPixels(this.element, x, y, 1, 1)
+      if (this.props.activeDcm.isDicom) {
+        if (this.props.activeDcm.image.color) {
+          //sp = getRGBPixels(this.element, x, y, 1, 1)
+          //sp = cornerstone.getStoredPixels(this.element, x, y, 1, 1)
+          sp = this.getRGBPixelsImage(x, y, 1, 1)
         } else {
-          sp = cornerstone.getStoredPixels(this.element, x, y, 1, 1)
+          // sp = cornerstone.getStoredPixels(this.props.activeDcm.element, x, y, 1, 1)
+          sp = this.getPixelsImage(x, y, 1, 1)
         }
       } else {
         sp = this.getRGBPixelsImage(x, y, 1, 1)
@@ -130,7 +156,7 @@ class Histogram extends PureComponent {
     }
 
     updateCanvas() {
-      const image = this.image
+      const image = this.props.activeDcm.image
       //const element = this.props.element
       const maxPixelValue = image.maxPixelValue
       const minPixelValue = image.minPixelValue
@@ -147,6 +173,12 @@ class Histogram extends PureComponent {
       this.setState({maxHist: maxHist})
       this.binSize = binSize
 
+      //console.log('activeDcm: ', this.props.activeDcm)
+      //console.log('image: ', )
+      //console.log('getPixelData: ', image.getPixelData())
+      //console.log('columns: ', image.columns)
+      //console.log('rows: ', image.rows)
+      //console.log('isDicom: ', this.props.activeDcm.isDicom)
       //console.log('bitsStored: ', k)
       //console.log('minHist: ', minHist)
       //console.log('maxHist: ', maxHist)
@@ -157,17 +189,13 @@ class Histogram extends PureComponent {
       //console.log('stepWC: ', stepWC)
       //console.log('zero256-stepWW: ', zero256-stepWW)
       //console.log('zero256+stepWW: ', zero256+stepWW)   
-      //console.log('image.color: ', image.color)  
-      //console.log('isDicom: ', this.isDicom)  
-      //console.log('pixelData: ', this.pixelData)
-      //console.log('image.columns: ', image.columns)
-      //console.log('image.rows: ', image.rows)
+      //console.log('image.color: ', image.color)
+      //console.log('image.slope: ', image.slope)
+      //console.log('image.intercept: ', image.intercept)
 
       let m = 0 // the mean
-
       // build histogram
       let hist = Array(lenHist).fill(0) 
-
       for (let y = 0; y < image.columns; y++) {
         for (let x = 0; x < image.rows; x++) {
           let sp = this.getPixel(x, y)
@@ -181,6 +209,7 @@ class Histogram extends PureComponent {
       this.setState({mean: m})  
 
       //console.log('hist: ', hist)
+      //console.log('mean: ', m)
 
       // calculate standard deviation
       let s = 0
@@ -195,25 +224,53 @@ class Histogram extends PureComponent {
 
       // binning the histogram 
       let hist256 = Array(N_BINS).fill(0) 
-      let step = 0
       let max = 0
-      for (let i=0; i < N_BINS; i++) {
-        for (let j=step; j < Math.round(step+binSize); j++) {
-          if (j >= lenHist) break
-          hist256[i] += hist[j]
+
+      if (binSize < 1) {
+        let binStep = Math.round(N_BINS / lenHist)
+        let iHist = 0
+        let i = 0
+        while (i < N_BINS) {
+          for (let j=0; j < binStep; j++) { 
+            hist256[i] = iHist < lenHist ? hist[iHist] : 0
+            if (max < hist256[i]) max = hist256[i]  
+            i++
+          }   
+          iHist++     
         }
-        if (max < hist256[i]) { max = hist256[i] }
-        step = Math.round(step+binSize)
+
+        /*for (let i=0; i < N_BINS; i+=binStep) {
+          const k = Math.floor(i)
+          //console.log(`i: ${k} `)
+          for (let j=0; j < Math.round(binStep); j++) { 
+            console.log(`i: ${k} - j: ${j} - iHist: ${iHist} - hist[iHist]: ${hist[iHist]}`)
+            hist256[k+j] = hist[iHist]
+          }
+          iHist++
+          if (max < hist256[k]) max = hist256[k] 
+        }*/
+      } else {
+        let step = 0
+        for (let i=0; i < N_BINS; i++) {
+          for (let j=step; j < Math.round(step+binSize); j++) {
+            if (j >= lenHist) break
+            hist256[i] += hist[j]
+          }
+          if (max < hist256[i]) { max = hist256[i] }
+          step = Math.round(step+binSize)
+        }        
       }
+
       this.hist256 = hist256
 
       //console.log('hist256: ', hist256)
       //console.log('max: ', max)
+
+      if (max / HIST_HEIGHT > 100) max = max / 5
       
       const canvasH = this.canvasHistogram.current
       const ctxH = this.canvasHistogram.current.getContext("2d")
-      ctxH.translate(0, canvasH.height)
-      ctxH.scale(1, -1)
+      ctxH.clearRect(0, 0, ctxH.canvas.width, ctxH.canvas.height)
 
       canvasH.addEventListener('pointermove', (evt) => {
         const mousePos = this.getMousePos(canvasH, evt)
@@ -299,7 +356,7 @@ class Histogram extends PureComponent {
       this.setState({activeDrags: this.state.activeDrags-1})
     }
 
-    render() {  
+    render() {
       return (
         <div style={style}>
           <div>

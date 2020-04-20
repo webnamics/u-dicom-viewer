@@ -17,8 +17,27 @@ const DicomHeader = ({dcmViewer, classes, color}) => {
     header.push({name: 'Transfer Syntax', value: dcmViewer.getTransferSyntax()})
     header.push({name: 'SOP Class', value: dcmViewer.getSopClass()})
     header.push({name: 'SOP Instance UID', value: dcmViewer.getSopInstanceUID()})
+    header.push({name: 'Modality', value: dcmViewer.image.data.string('x00080060')})
+    header.push({name: 'Manufacturer', value: dcmViewer.image.data.string('x00080070')})
+    header.push({name: 'Study Description', value: dcmViewer.image.data.string('x00081030')})
+    header.push({name: 'Series Description', value: dcmViewer.image.data.string('x0008103E')})
     header.push({name: 'Patient Name', value: dcmViewer.image.data.string('x00100010')})
     header.push({name: 'Frame Rate', value: dcmViewer.image.data.string('x00082144')})
+
+    header.push({name: 'MR Acquisition Type', value: dcmViewer.image.data.string('x00180023')})
+    header.push({name: 'Slice Thickness', value: dcmViewer.image.data.string('x00180050')})
+    header.push({name: 'Spacing Between Slice', value: dcmViewer.image.data.string('x00180088')})
+    header.push({name: 'Patient Position', value: dcmViewer.image.data.string('x00185100')})
+
+    header.push({name: 'Study ID', value: dcmViewer.image.data.string('x00200010')})
+    header.push({name: 'Series Number', value: dcmViewer.image.data.string('x00200011')})
+    header.push({name: 'Acquisition Number', value: dcmViewer.image.data.string('x00200012')})
+    header.push({name: 'Instance Number', value: dcmViewer.image.data.string('x00200013')})
+    header.push({name: 'Image Position (Patient)', value: dcmViewer.image.data.string('x00200032')})
+    header.push({name: 'Image Orientation (Patient)', value: dcmViewer.image.data.string('x00200037')})
+    header.push({name: 'Images in Acquisition', value: dcmViewer.image.data.string('x00201002')}) 
+    header.push({name: 'Slice Location', value: dcmViewer.image.data.string('x00201041')})        
+
     header.push({name: 'Samples per Pixel', value: dcmViewer.image.data.uint16('x00280002')})
     header.push({name: 'Photometric Interpretation', value: dcmViewer.image.data.string('x00280004')})
     header.push({name: 'Number of Frames', value: dcmViewer.image.data.string('x00280008')})
@@ -36,6 +55,9 @@ const DicomHeader = ({dcmViewer, classes, color}) => {
     header.push({name: 'Rescale Slope', value: dcmViewer.image.data.string('x00281053')})
     header.push({name: 'Min Stored Pixel Value', value: dcmViewer.image.minPixelValue})
     header.push({name: 'Max Stored Pixel Value', value: dcmViewer.image.maxPixelValue})
+
+    header.push({name: 'Image Orientation', value: dcmViewer.image.data.string('x00700042')})
+    header.push({name: 'Image Horizontal Flip', value: dcmViewer.image.data.string('x00700041')})
 
     const listItems = header.map((item, index) => {
         if (item.value !== undefined) 

@@ -13,7 +13,7 @@ import {
   getSettingsDicomdirView,
 } from '../functions'
 import {
-  sandboxedfileStore,
+  fsFileStore,
 } from '../actions'
 
 const styles = theme => ({
@@ -154,7 +154,7 @@ class Dicomdir extends PureComponent {
           components.unshift(this.props.fsCurrentDir)
           const parent = components.join('/')
           fs.files.where({parent: parent, name: name}).first((item) => {
-            this.props.setSandboxedfileStore(item)
+            this.props.setFsFileStore(item)
             this.props.onOpenFs(item)
           })
         }
@@ -226,7 +226,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    setSandboxedfileStore: (file) => dispatch(sandboxedfileStore(file))
+    setFsFileStore: (file) => dispatch(fsFileStore(file))
   }
 }
   

@@ -14,7 +14,7 @@ WebFontLoader.load({
     },
 })
 
-//store.subscribe(() => console.log('store updated:', store.getState()));
+// store.subscribe(() => console.log('store updated:', store.getState()));
 
 const theme = createMuiTheme({
     overrides: {

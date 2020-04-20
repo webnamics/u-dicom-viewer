@@ -14,26 +14,28 @@
 
 <h2><a id="user-content-acknowledgments" class="anchor" aria-hidden="true" href="#acknowledgments"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Key features</h2>
 <ul>
-	<li>Integration of a sandboxed file manager to handle easily files and subfolders. (1)</li>
-	<li>Open zip archive from local and decompress it into sandboxed file system.</li>
-	<li>Open zip archive from URL and decompress it into sandboxed file system.</li>
-	<li>Open images from sandboxed file system.</li>
-	<li>Open DICOMDIR from sandboxed file system.</li>
+	<li>Integration of a sandbox file manager to handle easily files and subfolders. (1)</li>
+	<li>Open zip archive from local and decompress it into sandbox file system.</li>
+	<li>Open zip archive from URL and decompress it into sandbox file system.</li>
+	<li>Open images from sandbox file system.</li>
+	<li>Open DICOMDIR from sandbox file system.</li>
 	<li>Open DICOMDIR file from local (2).</li> 
+	<li>Open multiple files from local folder (2).</li> 
 	<li>Open medical images in DICOM format from local and URL.</li> 
 	<li>Open images in JPEG or PNG format from local and URL.</li> 
-	<li>Export zip archive of images from sanboxed file system.</li> 
+	<li>Export zip archive of images from sandbox file system.</li> 
 	<li>Window width and window center control for DICOM images.</li>
 	<li>Zooming and panning images.</li> 
 	<li>Measurement tools with annotation field.</li>
 	<li>Measurement tools for length, area and angle, elliptical, rectangle and Freehand ROI.</li>
 	<li>Persistence of measurement tools. (3)</li>
-	<li>Cine view with control functions.</li>
+	<li>Cine view with control functions for multiframe image.</li>
 	<li>Displaying DICOM attributes of image.</li>
 	<li>Multi-view support, it can open up to 16 different files (1x1 to 4x4 grid).</li>
+	<li>Basic 2D Multiplanar reconstruction (MPR), this allow to reconstruct images in orthogonal planes (coronal, sagittal, axial).</li>
 	<li>Histogram window.</li>
 	<li>Save DICOM attributes as JSON or CSV file.</li>
-	<li>Save screenshot in JPEG or PNG format into local or sandboxed file system.</li>
+	<li>Save screenshot in JPEG or PNG format into local or sandbox file system.</li>
 </ul>
 
 <div>

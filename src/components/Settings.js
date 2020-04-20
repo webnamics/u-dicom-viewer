@@ -134,7 +134,7 @@ const Settings = ({ onClose }) => {
           </div>
           <div>
           <FormControl component="fieldset" className={classes.formControl}>
-            <FormLabel component="legend" className={classes.formLabel}>Open sandboxed file system from:</FormLabel>
+            <FormLabel component="legend" className={classes.formLabel}>Open sandbox file system from:</FormLabel>
             <RadioGroup size='small' aria-label="filesystem" name="filesystem" value={state.fsView} onChange={handleChangeFsView}>
               <FormControlLabel value="left" control={<Radio size='small' />} label="left" />
               <FormControlLabel value="right" control={<Radio size='small' />} label="right" />
@@ -166,7 +166,7 @@ const Settings = ({ onClose }) => {
             <FormLabel component="legend" className={classes.formLabel}>Save screenshot into:</FormLabel>
             <RadioGroup aria-label="saveinto" name="saveinto" value={state.saveInto} onChange={handleChangeSaveInto}>
               <FormControlLabel value="local" control={<Radio size='small' />} label="local file system" />
-              <FormControlLabel value="sandboxed" control={<Radio size='small' />} label="sandboxed file system" />
+              <FormControlLabel value="sandbox" control={<Radio size='small' />} label="sandbox file system" />
             </RadioGroup>
           </FormControl>          
           </div>

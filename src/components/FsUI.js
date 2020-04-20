@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react'
 import {connect} from 'react-redux'
 import { withStyles } from '@material-ui/core/styles'
 import Button from '@material-ui/core/Button'
+import CircularProgress from '@material-ui/core/CircularProgress'
 import Dialog from '@material-ui/core/Dialog'
 import DialogContent from '@material-ui/core/DialogContent'
 import DialogContentText from '@material-ui/core/DialogContentText'
@@ -10,6 +11,7 @@ import DialogActions from '@material-ui/core/DialogActions'
 import Icon from '@mdi/react'
 import IconButton from '@material-ui/core/IconButton'
 import InputBase from '@material-ui/core/InputBase'
+import LinearProgress from '@material-ui/core/LinearProgress'
 import Paper from '@material-ui/core/Paper'
 import Table from '@material-ui/core/Table'
 import TableBody from '@material-ui/core/TableBody'
@@ -20,9 +22,12 @@ import TableRow from '@material-ui/core/TableRow'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
 import Tooltip from '@material-ui/core/Tooltip'
+import Typography from '@material-ui/core/Typography'
+// import {List as ListVirtual} from 'react-virtualized'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import fs from '../fs/fs'
+import OpenMultipleFilesDlg from './OpenMultipleFilesDlg'
 import {
     getFileExt,
     getFileExtReal,
@@ -36,7 +41,7 @@ import {
     setFsCurrentDir,
     setFsCurrentList,
     setZippedFile,
-    sandboxedfileStore,
+    fsFileStore,
 } from '../actions'
 import {
     mdiCheck,
@@ -48,8 +53,10 @@ import {
     mdiContentSaveOutline,
     mdiDeleteOutline,
     mdiDotsHorizontal,
-    mdiExportVariant,    
+    mdiExportVariant, 
+    mdiFolderOutline,   
     mdiFolderPlusOutline,
+    mdiCheckBoxOutline,
     mdiSquareEditOutline,
 } from '@mdi/js'
 
@@ -82,7 +89,9 @@ const styles = theme => ({
 class FsUI extends PureComponent {
     constructor(props) {
         super(props)
+        this.files = []
         this.cut = false
+        this.itemsCount = 0
         this.saveAsField = React.createRef()
       }
 
@@ -93,9 +102,11 @@ class FsUI extends PureComponent {
         selectedCopy: [],
         visibleTextField: false,
         visibleDeleteDlg: false,
-        visibleImportExport: false,
+        visibleOthers: false,
         visibleAlreadyExistDlg: false,
         visibleOSaveAsDlg: false,
+        visibleWaiting: false,
+        visibleOpenMultipleFilesDlg: false,
     }
 
     componentDidMount() {
@@ -196,7 +207,9 @@ class FsUI extends PureComponent {
             }).then(() => { // after list all files
                 fs.files.where({parent: dir}).and(item => item.type !== 'dir').sortBy('name').then((list) => {
                     listItems = listItems.concat(list)
+                }).then(() => {
                     this.props.setCurrentList(listItems)
+                    setTimeout(() => this.setState({visibleWaiting: false}), 2000)
                 })
             })
         })
@@ -206,6 +219,60 @@ class FsUI extends PureComponent {
         fs.files.add({parent: parent, name: name, type: 'dir', size: ''}).then(() => { 
             this.fsListDir(this.props.fsCurrentDir)
         })
+    }
+
+    doSelectUnselect = () => {
+        let newSelected = []
+        if (this.state.selected.length > 0) { // unselect the files
+            this.setState({selected: newSelected})            
+        } else { // select only files not dir
+            this.props.fsCurrentList.forEach((item) => {
+                if (item.type !== 'dir') {
+                    newSelected.push(item.name)
+                }
+                this.setState({selected: newSelected}, () => {
+                    //console.log('this.state.selected: ', this.state.selected)
+                })
+                
+            })
+        }
+    }
+
+    openSelectedFilesRetrieveItems = async () => {
+        await fs.transaction('r', fs.files, async () => {
+            this.state.selected.forEach( async (name, index) => {
+                await fs.files.where({parent: this.props.fsCurrentDir, name: name}).first((item) => {
+                    console.log('item: ', item)
+                    if (item !== undefined && item.type !== 'dir') {
+                        this.files.push(item)
+                    } else if (item.type === 'dir') {
+                        fs.files.where('parent').startsWithIgnoreCase(item.name).each((e) => {
+                            if (e !== undefined && e.type !== 'dir') {
+                                console.log(' e: ', e) 
+                                this.files.push(e)
+                            }
+                        })
+                    }
+                })
+             })
+        })
+    }
+
+    openSelectedFiles = () => {
+        if (this.state.selected.length === 0) return
+        this.files = []
+        this.openSelectedFilesRetrieveItems().then(() => {
+            console.log('this.files: ', this.files) 
+            this.setState({visibleOpenMultipleFilesDlg: true})
+            this.setState({selected: []})  
+        })
+    }
+
+    hideOpenMultipleFilesDlg = () => {
+        this.setState({ visibleOpenMultipleFilesDlg: false })
+        if (this.props.files.length > 1) {
+            this.props.onOpenMultipleFilesCompleted()
+        } else this.props.onOpenImage(0)
     }
 
     createDir = () => {
@@ -239,7 +306,7 @@ class FsUI extends PureComponent {
                     const oldParent = this.fsBuildParent(item.parent, item.name)
                     const newParent = this.fsBuildParent(item.parent, this.state.textFieldValue)
                     // rename parent for all subitems
-                    fs.transaction('rw', fs.files, async ()=> {
+                    fs.transaction('rw', fs.files, async () => {
                         await fs.files.where({parent: oldParent}).each((e) => {
                             fs.transaction('rw', fs.files, async () => { // since is a new primary key then add it as new item 
                                 await fs.files.add({
@@ -281,16 +348,20 @@ class FsUI extends PureComponent {
     }
 
     saveItem = () => {
-        //console.log('this.props.localfileStore: ', this.props.localfileStore)
-        //console.log('this.props.sandboxedFile: ', this.props.sandboxedFile)
-        if (this.props.localfileStore !== null) {
-            const file = this.props.localfileStore
+        console.log('this.props.localFileStore: ', this.props.localFileStore)
+        console.log('this.props.fsFileStore: ', this.props.fsFileStore)
+        //console.log('this.props.activeDcm: ', this.props.activeDcm)
+
+        if (this.props.localFileStore !== null) {
+            const file = this.props.localFileStore
             if (file === null) return
             let reader = new FileReader()
             reader.onload = (event) => {
                 let buffer = event.target.result
                 const ext = getFileExtReal(file.name)
+                //console.log('ext: ', ext)
                 const name = getFileName(getFileNameCorrect(file.name))   
+                //console.log('name: ', name)
                 let newName = name
                 let counter = 0
                 let done = false             
@@ -302,7 +373,7 @@ class FsUI extends PureComponent {
                             await fs.files.add({
                                 parent: this.props.fsCurrentDir,
                                 name: filename,
-                                type: getFileExt(name),
+                                type: ext === '' ? getFileExt(name) : ext,
                                 size: file.size,
                                 data: buffer
                             })
@@ -318,8 +389,8 @@ class FsUI extends PureComponent {
                 } while (!done)
             }
             reader.readAsArrayBuffer(file)
-        } else if (this.props.sandboxedFile !== null) {
-            const file = this.props.sandboxedFile
+        } else if (this.props.fsFileStore !== null) {
+            const file = this.props.fsFileStore
             let buffer = file.data
             const ext = getFileExtReal(file.name)
             const name = getFileName(getFileNameCorrect(file.name))   
@@ -487,8 +558,8 @@ class FsUI extends PureComponent {
         this.setState({selected: []}) 
     }
 
-    showImportExport = () => {
-        this.setState({visibleImportExport: !this.state.visibleImportExport})
+    showOthers = () => {
+        this.setState({visibleOthers: !this.state.visibleOthers})
     }
 
     exportItem = () => {
@@ -510,18 +581,18 @@ class FsUI extends PureComponent {
             )
         }
         this.setState({selected: newSelected}, () => {
-        //    console.log('this.state.selected: ', this.state.selected)
+            console.log('this.state.selected: ', this.state.selected)
         })
     }
 
     itemDoubleClick = (e, item) => {
-        //console.log('itemDoubleClick: ', item.name)
         if (item.type === 'dir') {
+            this.setState({visibleWaiting: true})
             this.props.setCurrentDir(this.fsBuildParent(item.parent, item.name))
         } else if (item.name === 'DICOMDIR') {
             this.props.onOpenDicomdir(item)
         } else {
-            this.props.setSandboxedfileStore(item)
+            this.props.setFsFileStore(item)
             this.props.onOpen(item)
         }
     }
@@ -549,12 +620,12 @@ class FsUI extends PureComponent {
 
     closeSaveAs = () => {
         const filename = `${this.saveAsField.value}.zip`
-        this.setState({ visibleOSaveAsDlg: false },
-            () => {
+        this.setState({ visibleOSaveAsDlg: false }, () => {
             let zip = new JSZip()
             let listItems = []
             fs.files.where('parent').startsWithIgnoreCase(this.props.fsCurrentDir).each((e) => {
-                listItems.push(e)
+                if (this.state.selected.indexOf(e.parent) >= 0 || this.state.selected.indexOf(e.name) >= 0)
+                    listItems.push(e)
             }).then(() => {
                 listItems.forEach((e) => {
                     if (e.type !== 'dir') {
@@ -582,10 +653,12 @@ class FsUI extends PureComponent {
         const { classes } = this.props
         const isSelected = name => this.state.selected.indexOf(name) !== -1
         const visibleTextField = this.state.visibleTextField
-        const visibleImportExport = this.state.visibleImportExport
+        const visibleOthers = this.state.visibleOthers
         const visibleDeleteDlg = this.state.visibleDeleteDlg
         const visibleAlreadyExistDlg = this.state.visibleAlreadyExistDlg
         const visibleOSaveAsDlg = this.state.visibleOSaveAsDlg
+        const visibleOpenMultipleFilesDlg = this.state.visibleOpenMultipleFilesDlg
+        const visibleWaiting = this.state.visibleWaiting
 
         let styleComponent = null
         if (getSettingsFsView() === 'bottom') {
@@ -593,6 +666,14 @@ class FsUI extends PureComponent {
         } else {
             styleComponent = {marginTop: '48px', width: '350px'}
         }
+
+        let totalItemsCount = ''
+        if (this.state.selected.length > 0)
+            totalItemsCount = `(${this.state.selected.length} / ${this.props.fsCurrentList.length} items)`
+        else 
+            totalItemsCount = `(${this.props.fsCurrentList.length} items)`
+
+        //console.log('this.props.fsCurrentDir: ', this.props.fsCurrentDir)
 
         return (
             <div style={styleComponent}>
@@ -616,71 +697,121 @@ class FsUI extends PureComponent {
                     </Paper>
                   : 
                     <div>
-                        <Toolbar variant="dense">
-                            <div className={classes.leftButtons}>
-                                <IconButton color="inherit" onClick={this.previousDir} >
-                                    <Icon path={mdiChevronLeft} size={'1.2rem'} color={this.props.color} />
-                                </IconButton>                            
-                            </div>
-                            <div className={classes.toolbarButtons}>
-                                <Tooltip title="Create a new directory">
-                                    <IconButton color="inherit" onClick={this.createDir}>
-                                        <Icon path={mdiFolderPlusOutline} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Rename the last selected item">
-                                    <IconButton color="inherit" onClick={this.renameItem}>
-                                        <Icon path={mdiSquareEditOutline} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton> 
-                                </Tooltip>
-                                <Tooltip title="Move the selected items to the clipboard">                          
-                                    <IconButton color="inherit" onClick={this.cutItem}>
-                                        <Icon path={mdiContentCut} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton> 
-                                </Tooltip>  
-                                <Tooltip title="Copy the selected items to the clipboard">
-                                    <IconButton color="inherit" onClick={this.copyItem}>
-                                        <Icon path={mdiContentCopy} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Paste clipboard contents to current location">                             
-                                    <IconButton color="inherit" onClick={this.pasteItem}>
-                                        <Icon path={mdiContentPaste} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>   
-                                </Tooltip>  
-                                <Tooltip title="Delete the selected items">    
-                                    <IconButton color="inherit" onClick={this.showDeleteDlg}>
-                                        <Icon path={mdiDeleteOutline} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>  
-                                </Tooltip>
-                                <IconButton color="inherit" onClick={this.showImportExport}>
-                                    <Icon path={mdiDotsHorizontal} size={'1.2rem'} color={this.props.color} />
-                                </IconButton>                           
-                            </div>            
-                        </Toolbar>
-                        { visibleImportExport ?
+
+                        <div>
                             <Toolbar variant="dense">
+                                <div className={classes.leftButtons}>
+                                { visibleWaiting ?
+                                    <CircularProgress style={{marginLeft: '10px'}} size={20} color="secondary" />
+                                  : 
+                                    <Tooltip title="Previous folder">
+                                        <IconButton color="inherit" onClick={this.previousDir} >
+                                            <Icon path={mdiChevronLeft} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>       
+                                    </Tooltip>                                     
+                                }
+                    
+                                </div>
                                 <div className={classes.toolbarButtons}>
-                                    <Tooltip title="Save the selected image to sandboxed file system"> 
-                                        <IconButton color="inherit" onClick={this.saveItem}>
-                                            <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>      
+                                    <Tooltip title="Select/unselect all files">
+                                        <IconButton color="inherit" onClick={this.doSelectUnselect}>
+                                            <Icon path={mdiCheckBoxOutline} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>
+                                    </Tooltip>    
+                                    <Tooltip title="Open selected files">
+                                        <IconButton color="inherit" onClick={this.openSelectedFiles}>
+                                            <Icon path={mdiFolderOutline} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>
+                                    </Tooltip>                            
+                                    <Tooltip title="Create a new directory">
+                                        <IconButton color="inherit" onClick={this.createDir}>
+                                            <Icon path={mdiFolderPlusOutline} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>
                                     </Tooltip>
-                                    <Tooltip title="Export the selected items as zipped archive">
-                                        <IconButton color="inherit" onClick={this.exportItem}>
-                                            <Icon path={mdiExportVariant} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>   
-                                    </Tooltip>     
-                                    {/*<IconButton color="inherit" onClick={this.downloadItem}>
-                                        <Icon path={mdiDownload} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>*/}                                     
+                                    <Tooltip title="Rename the last selected item">
+                                        <IconButton color="inherit" onClick={this.renameItem}>
+                                            <Icon path={mdiSquareEditOutline} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton> 
+                                    </Tooltip>
+
+                                    <IconButton color="inherit" onClick={this.showOthers}>
+                                        <Icon path={mdiDotsHorizontal} size={'1.2rem'} color={this.props.color} />
+                                    </IconButton>                           
                                 </div>            
                             </Toolbar>
+                        </div> 
+
+                        { visibleOthers ?
+                            <div>
+                                <Toolbar variant="dense">
+                                    <div className={classes.toolbarButtons}>
+                                        <Tooltip title="Move the selected items to the clipboard">                          
+                                            <IconButton color="inherit" onClick={this.cutItem}>
+                                                <Icon path={mdiContentCut} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton> 
+                                        </Tooltip>  
+                                        <Tooltip title="Copy the selected items to the clipboard">
+                                            <IconButton color="inherit" onClick={this.copyItem}>
+                                                <Icon path={mdiContentCopy} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Paste clipboard contents to current location">                             
+                                            <IconButton color="inherit" onClick={this.pasteItem}>
+                                                <Icon path={mdiContentPaste} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>   
+                                        </Tooltip>  
+                                        <Tooltip title="Delete the selected items">    
+                                            <IconButton color="inherit" onClick={this.showDeleteDlg}>
+                                                <Icon path={mdiDeleteOutline} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>  
+                                        </Tooltip>                                    
+                                        <Tooltip title="Save the opened image to sandbox file system"> 
+                                            <IconButton color="inherit" onClick={this.saveItem}>
+                                                <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>      
+                                        </Tooltip>
+                                        <Tooltip title="Export the selected items as zipped archive">
+                                            <IconButton color="inherit" onClick={this.exportItem}>
+                                                <Icon path={mdiExportVariant} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>   
+                                        </Tooltip>     
+                                        {/*<IconButton color="inherit" onClick={this.downloadItem}>
+                                            <Icon path={mdiDownload} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>*/}                                     
+                                    </div>            
+                                </Toolbar>
+                            </div>
                         : null
                         }
+
+                        <div>
+                            <div>
+                                <Typography 
+                                    type="caption text" 
+                                    style={{fontSize: '0.75em', marginLeft: '15px', color: 'rgba(146, 146, 146, 1)', float: 'left'}}>
+                                        {'/'+this.props.fsCurrentDir+' '}
+                                </Typography>
+                            </div>
+                            <div>
+                                <Typography 
+                                    type="caption text" 
+                                    style={{fontSize: '0.75em', marginRight: '5px', color: 'rgba(146, 146, 146, 1)', float: 'right'}}>
+                                        { totalItemsCount }
+                                </Typography>
+                            </div>
+                        </div>    
+
+                        { visibleWaiting ?
+                            <div style={{marginTop: '20px', position: 'absolute'}}>
+                                <LinearProgress color="secondary" />
+                            </div>
+                          : null  
+                        }
+    
                     </div>
+                    
                 }
-                <div>
+                <div style={{height: '200px'}}>
                     <TableContainer component={Paper}>
                         <Table className={classes.table} size="small">
                             <TableHead>
@@ -770,7 +901,9 @@ class FsUI extends PureComponent {
                             Ok
                         </Button>
                     </DialogActions>
-                </Dialog>                              
+                </Dialog>          
+
+                {visibleOpenMultipleFilesDlg ? <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={'fs'} /> : null}                    
             </div>
         )
     }              
@@ -778,12 +911,14 @@ class FsUI extends PureComponent {
 
 const mapStateToProps = (state) => {
     return {
-      localfileStore: state.localfile,
+      files: state.files,
+      localFileStore: state.localFile,
+      fsFileStore: state.fsFile,  
+      activeDcm: state.activeDcm,
       fsCurrentDir: state.fsCurrentDir,
       fsCurrentList: state.fsCurrentList,
       fsZippedFile: state.fsZippedFile,
       fsRefresh: state.fsRefresh,
-      sandboxedFile: state.sandboxedFile,
     }
 }
 
@@ -792,7 +927,7 @@ const mapDispatchToProps = (dispatch) => {
         setCurrentDir: (dir) => dispatch(setFsCurrentDir(dir)),
         setCurrentList: (list) => dispatch(setFsCurrentList(list)),
         setFsZippedFile: (file) => dispatch(setZippedFile(file)),
-        setSandboxedfileStore: (file) => dispatch(sandboxedfileStore(file)),
+        setFsFileStore: (file) => dispatch(fsFileStore(file)),
     }
 }
 
