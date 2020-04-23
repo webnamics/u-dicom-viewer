@@ -25,6 +25,8 @@ import {
   setSettingsFsView,
   getSettingsDicomdirView,
   setSettingsDicomdirView,
+  getSettingsMprInterpolation,
+  setSettingsMprInterpolation,
 } from '../functions'
 
 const useStyles = makeStyles(theme => ({
@@ -59,6 +61,7 @@ const Settings = ({ onClose }) => {
   let overlay = getSettingsOverlay()
   let fsView = getSettingsFsView()
   let dicomdirView = getSettingsDicomdirView()
+  let mprInterpolation = getSettingsMprInterpolation()
 
   //const isIndexedDB = false // 'indexedDB' in window
   
@@ -92,6 +95,10 @@ const Settings = ({ onClose }) => {
     setSettingsDicomdirView(event.target.value)
   }  
 
+  const handleChangeMprInterpolation = event => {
+    setState({ ...state, 'mprInterpolation': event.target.value })
+    setSettingsMprInterpolation(event.target.value)
+  }  
   const classes = useStyles()
 
   const [state, setState] = React.useState({
@@ -101,6 +108,7 @@ const Settings = ({ onClose }) => {
     overlay: overlay,
     fsView: fsView,
     dicomdirView: dicomdirView,
+    mprInterpolation: mprInterpolation,
   })
 
   return (
@@ -178,7 +186,16 @@ const Settings = ({ onClose }) => {
               <FormControlLabel value="csv" control={<Radio size='small' />} label="CSV" />
             </RadioGroup>
           </FormControl> 
-          </div>  
+          </div> 
+          <div>
+          <FormControl component="fieldset" className={classes.formControl}>
+            <FormLabel component="legend" className={classes.formLabel}>MPR interpolation method:</FormLabel>
+            <RadioGroup aria-label="mprinterpolation" name="mprinterpolation" value={mprInterpolation} onChange={handleChangeMprInterpolation}>
+              <FormControlLabel value="no" control={<Radio size='small' />} label="No interpolation (duplicate planes)" />
+              <FormControlLabel value="weightedlinear" control={<Radio size='small' />} label="Weighted linear interpolation" />
+            </RadioGroup>
+          </FormControl> 
+          </div>            
         </div>
       </Dialog>
     </div>

@@ -61,11 +61,14 @@ import {
   log,
   getPixelSpacing,
   getSpacingBetweenSlice,
+  getSliceThickness,
+  getSliceLocation,
   //getFileNameCorrect,
   getFileExtReal,
   isInputDirSupported,
   getSettingsFsView,
   getSettingsDicomdirView,
+  getSettingsMprInterpolation,
 } from './functions'
 import { 
   mdiAngleAcute,
@@ -348,13 +351,13 @@ class App extends PureComponent {
   }
 
   handleOpenImage = (index) => {
-    console.log('handleOpenImage : ', index)
+    //console.log('handleOpenImage : ', index)
     const visibleMprOrthogonal = this.state.visibleMprOrthogonal
     const visibleMprSagittal = this.state.visibleMprSagittal
     const visibleMprCoronal = this.state.visibleMprCoronal
     const visibleMprAxial = this.state.visibleMprAxial
     const plane = this.mprPlanePosition()
-    console.log('plane: ', plane)
+    //console.log('plane: ', plane)
 
     if (visibleMprOrthogonal) {
       if (this.props.activeDcmIndex === 0) {
@@ -366,7 +369,7 @@ class App extends PureComponent {
         } else if (plane === 'axial') { // then open coronal plane in second view
           this.dicomViewersRefs[1].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
         } else { // plane is coronal, then open axial in second view
-          this.dicomViewersRefs[1].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+          this.dicomViewersRefs[1].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
         }
 
       } else if (this.props.activeDcmIndex === 2) {
@@ -375,7 +378,7 @@ class App extends PureComponent {
         } else if (plane === 'axial') { // then open coronal plane in second view
           this.dicomViewersRefs[2].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
         } else { // plane is coronal, then open axial in second view
-          this.dicomViewersRefs[2].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+          this.dicomViewersRefs[2].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
         }        
       }
 
@@ -967,7 +970,7 @@ class App extends PureComponent {
     v[1][0] = parseFloat(iop[3]) // the x direction cosines of the first column Y
     v[1][1] = parseFloat(iop[4]) // the y direction cosines of the first column Y
     v[1][2] = parseFloat(iop[5]) // the z direction cosines of the first column Y 
-    console.log('getImageOrientationZ: ', v[1][2])
+    //console.log('getImageOrientationZ: ', v[1][2])
     return v[1][2]
   }
 
@@ -979,10 +982,35 @@ class App extends PureComponent {
     const files = this.props.files
     const xPixelSpacing = getPixelSpacing(files[0].image, 0)
     const spacingBetweenSlice = getSpacingBetweenSlice(files[0].image)
+    const sliceThickness = getSliceThickness(files[0].image)
     const length = files[0].image.getPixelData().length
+    const sliceLocation = getSliceLocation(files[0].image)
     this.volume = []
+    // see https://stackoverflow.com/questions/58412358/dicom-multiplanar-image-reconstruction
     this.mprData.zDim = Math.round(files.length * spacingBetweenSlice / xPixelSpacing)
+
     //console.log('this.mprData.zDim: ', this.mprData.zDim)
+    //console.log('spacingBetweenSlice: ', spacingBetweenSlice)
+    //console.log('sliceThickness: ', sliceThickness)
+    //console.log('xPixelSpacing: ', xPixelSpacing)
+    //console.log('getSliceLocation: ', sliceLocation)
+
+    // If spacing between slices is less than slice thickness, the images are not optimal for 3D reconstruction.
+    // Try an alternative algorithm based on slice distance.
+    let zDimMethod2 = false
+    if (spacingBetweenSlice < sliceThickness && sliceLocation === undefined) {
+      let max = 0
+      let min = 0
+      for(let i=0; i < files.length; i++) {
+        if (files[i].sliceDistance > max)
+          max = files[i].sliceDistance
+        if (files[i].sliceDistance < min)
+          min = files[i].sliceDistance  
+      }
+      this.mprData.zDim = Math.round(Math.abs(max - min) / xPixelSpacing)
+      //console.log('method2, this.mprData.zDim: ', this.mprData.zDim)
+      zDimMethod2 = true
+    }
 
     if (files.length === this.mprData.zDim) { // slices contiguous
       for (let i = 0, len = files.length; i < len; i++) {
@@ -990,7 +1018,6 @@ class App extends PureComponent {
       }
       
     } else if (files.length < this.mprData.zDim) { // gap between slices
-      //const step = this.mprData.zDim / files.length
       
       let emptyPlane = new Int16Array(length).fill(0)
       for (let i = 0, len = this.mprData.zDim; i < len; i++) {
@@ -998,22 +1025,38 @@ class App extends PureComponent {
       }
 
       let order = []
+
       for (let i = 0; i < files.length; i++) {
         order.push({iFile: i, instanceNumber: files[i].instanceNumber, sliceDistance: files[i].sliceDistance, sliceLocation: files[i].sliceLocation})
       }
+      
+      if (zDimMethod2) {
+        // eliminate eventually duplicates
+        order = order.reduce((previous, current) => {
+          let object = previous.filter(object => object.sliceDistance === current.sliceDistance)
+          if (object.length === 0) {
+            previous.push(current)
+          }
+          return previous
+        }, [])
 
-      
-      // const reorder = files[0].sliceDistance < files[1].sliceDistance
-      const reorder = files[0].sliceLocation < files[1].sliceLocation
-      if (reorder) {
         order.sort((l, r) => {
-          // return l.instanceNumber - r.instanceNumber
-          //return r.sliceDistance - l.sliceDistance
-          return r.sliceLocation - l.sliceLocation
+          // return r.sliceDistance - l.sliceDistance
+          return l.instanceNumber - r.instanceNumber
         })     
-        console.log('reorder: ')     
+        //console.log('order: ', order)     
+      } else {
+        // const reorder = files[0].sliceDistance < files[1].sliceDistance
+        const reorder = files[0].sliceLocation < files[1].sliceLocation
+        if (reorder) {
+          order.sort((l, r) => {
+            // return l.instanceNumber - r.instanceNumber
+            // return r.sliceDistance - l.sliceDistance
+            return r.sliceLocation - l.sliceLocation
+          })
+          //console.log('reorder: ')     
+        }
       }
-      
       /*if (this.getImageOrientationZ(files[0].image) < 0) {
         order.sort((l, r) => {
           return r.instanceNumber - l.instanceNumber
@@ -1024,69 +1067,75 @@ class App extends PureComponent {
 
       let intervals = [0]
       this.volume[0] = files[order[0].iFile].image.getPixelData()
-      this.volume[this.mprData.zDim-1] = files[order[files.length-1].iFile].image.getPixelData()  
-      const step = Math.floor((this.mprData.zDim-2) / (files.length-2))
+      this.volume[this.mprData.zDim-1] = files[order[order.length-1].iFile].image.getPixelData()  
+      const step = (this.mprData.zDim-2) / (order.length-2)
       let i = 0
-      for (let k = 1; k <= files.length-2; k++) {  
-          i += step
+      for (let k = 1; k <= order.length-2; k++) {  
+          i = Math.ceil(i+step)
           //console.log(`i: ${i},  k: ${k},  order[k].iFile: ${order[k].iFile}`)
           this.volume[i] = files[order[k].iFile].image.getPixelData() // order[k-1].iFile
           intervals.push(i)
       }
       intervals.push(this.mprData.zDim-1)
-
+      console.log('intervals: ', intervals)
+      
       //console.log('this.volume: ', this.volume)
 
-      // build missing planes without interpolation
-      /*for (let i = 0; i < intervals.length-1; i++) {
-        console.log(`intervals: ${intervals[i]} - ${intervals[i+1]}`)
-        for (let j = intervals[i]+1; j < intervals[i+1]; j++) {
-          console.log(`j: ${j}`)
-          this.volume[j] = this.volume[intervals[i+1]]
-          console.log(`this.volume[j]: ${this.volume[j]}`)
-          break
-        }
-      }*/
+      const interpolationMethod = getSettingsMprInterpolation()
 
-      // build the interpolate planes between original planes
-      for (let i = 0; i < intervals.length-1; i++) {
-        //console.log(`intervals: ${intervals[i]} - ${intervals[i+1]}`)
-        const step = intervals[i+1]-intervals[i]
-
-        for (let j = intervals[i]+1; j < intervals[i+1]; j++) {
-          //console.log(`i: ${i}, intervals[i]: ${intervals[i]}, j: ${j}`)
-
-          let p = new Int16Array(length)
-          const w = (j-intervals[i]) / step
-
-          for (let k = 0; k < length-1; k++) {
-            // simple linear interpolation
-            /*const p0 = this.volume[intervals[i]][k]
-            const p1 = this.volume[intervals[i+1]][k]
-            p[k] = (p0+p1)/2*/    
-
-            // weighted linear interpolation
-            const p0 = this.volume[intervals[i]][k] * (1-w)
-            const p1 = this.volume[intervals[i+1]][k] * w
-            p[k] = p0+p1
-
-            // weighted bilinear interpolation
-            /*if (k-1 > 0 && k+1 < length) {
-              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.5 + this.volume[intervals[i]][k-1] * (1-w) * 0.25 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
-              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25 + this.volume[intervals[i+1]][k+1] * w * 0.25
-              p[k] = p0+p1
-            } else if (k-1 < 0) {
-              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
-              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k+1] * w * 0.25
-              p[k] = p0+p1
-            } else { // k+1 > length 
-              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k-1] * (1-w) * 0.25
-              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25
-              p[k] = p0+p1
-            }*/
+      if (interpolationMethod === 'no') {
+        // build missing planes without interpolation, simple duplicate
+        for (let i = 0; i < intervals.length-1; i++) {
+          //console.log(`intervals: ${intervals[i]} - ${intervals[i+1]}`)
+          for (let j = intervals[i]+1; j <= intervals[i+1]-1; j++) {
+            //console.log(`j: ${j}`)
+            this.volume[j] = this.volume[intervals[i+1]]
           }
+        }
 
-          this.volume[j]= p
+      } else if (interpolationMethod === 'weightedlinear') {
+        // build the interpolate planes between original planes
+        for (let i = 0; i < intervals.length-1; i++) {
+          //console.log(`intervals: ${intervals[i]} - ${intervals[i+1]}`)
+          const step = intervals[i+1]-intervals[i]
+
+          for (let j = intervals[i]+1; j < intervals[i+1]; j++) {
+            //console.log(`i: ${i}, intervals[i]: ${intervals[i]}, j: ${j}`)
+
+            let p = new Int16Array(length)
+            const w = (j-intervals[i]) / step
+
+            for (let k = 0; k < length-1; k++) {
+              // simple linear interpolation
+              // const p0 = this.volume[intervals[i]][k]
+              // const p1 = this.volume[intervals[i+1]][k]
+              // p[k] = (p0+p1)/2   
+
+              // weighted linear interpolation
+              const p0 = this.volume[intervals[i]][k] * (1-w)
+              const p1 = this.volume[intervals[i+1]][k] * w
+              p[k] = p0+p1
+              if (p0 === undefined || p1 === undefined) {
+                console.log('undefined')
+              }
+              // weighted bilinear interpolation
+              /*if (k-1 > 0 && k+1 < length) {
+                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.5 + this.volume[intervals[i]][k-1] * (1-w) * 0.25 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
+                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25 + this.volume[intervals[i+1]][k+1] * w * 0.25
+                p[k] = p0+p1
+              } else if (k-1 < 0) {
+                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
+                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k+1] * w * 0.25
+                p[k] = p0+p1
+              } else { // k+1 > length 
+                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k-1] * (1-w) * 0.25
+                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25
+                p[k] = p0+p1
+              }*/
+            }
+
+            this.volume[j]= p
+          }
         }
       }
 
@@ -1340,7 +1389,7 @@ class App extends PureComponent {
 
   listOpenFilesPreviousFrame = () => {
     let index = this.state.sliceIndex
-    index = index === 0 ? this.props.files.length-1 : index-1
+    index = index === 0 ? this.state.sliceMax-1 : index-1
     //this.props.setLocalFileStore(this.files[index])
     this.setState({sliceIndex: index}, () => {
       this.handleOpenImage(index)
@@ -1349,7 +1398,7 @@ class App extends PureComponent {
 
   listOpenFilesNextFrame = () => {
     let index = this.state.sliceIndex
-    index = index === this.props.files.length-1 ? 0 : index+1
+    index = index === this.state.sliceMax-1 ? 0 : index+1
     //this.props.setLocalFileStore(this.files[index])
     this.setState({sliceIndex: index}, () => {
       this.handleOpenImage(index)
@@ -1357,7 +1406,7 @@ class App extends PureComponent {
   }  
 
   listOpenFilesLastFrame = () => {
-    const index = this.props.files.length-1
+    const index = this.state.sliceMax-1
     //this.props.setLocalFileStore(this.files[index])
     this.setState({sliceIndex: index}, () => {
       this.handleOpenImage(index)

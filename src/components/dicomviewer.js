@@ -523,7 +523,7 @@ class DicomViewer extends React.Component {
 
         cornerstone.displayImage(element, image)
 
-        this.enableTool()
+        //this.enableTool()
 
         this.props.setIsOpenStore({index: this.props.index, value: true})
 
@@ -1279,7 +1279,7 @@ class DicomViewer extends React.Component {
       this.ySize = this.props.files[0].rows
       this.zSize = mprData.zDim
 
-      const i = Math.round(y / this.ySize * this.props.files.length)
+      const i = Math.trunc(y / this.ySize * this.props.files.length)
       this.originImage = this.props.files[i].image
 
       if (origin === 'sagittal') {

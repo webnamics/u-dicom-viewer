@@ -12,6 +12,7 @@ import {
     SETTINGS_MEASUREMENT,
     SETTINGS_FSVIEW,
     SETTINGS_DICOMDIRVIEW,    
+    SETTINGS_MPRINTERPOLATION,
 } from './constants/settings'
 
 
@@ -31,6 +32,22 @@ export function getSpacingBetweenSlice(image) {
     }
     return parseFloat(value)
 }
+
+export function getSliceThickness(image) {
+    const value = image.data.string('x00180050')
+    if (value === undefined) {
+        return
+    }
+    return parseFloat(value)
+}
+
+export function getSliceLocation(image) {
+    const value = image.data.string('x00201041')
+    if (value === undefined) {
+        return
+    }
+    return parseFloat(value)
+}	
 
   
 export function capitalize(str) {
@@ -211,6 +228,19 @@ export function getSettingsDicomdirView() {
 
 export function setSettingsDicomdirView(value) {
     localStorage.setItem(SETTINGS_DICOMDIRVIEW, value)  
+}
+
+export function getSettingsMprInterpolation() {
+    let method = localStorage.getItem(SETTINGS_MPRINTERPOLATION)
+    if (method === null) {
+        method = 'weightedlinear'
+        localStorage.setItem(SETTINGS_MPRINTERPOLATION, method)
+    }
+    return method
+}
+
+export function setSettingsMprInterpolation(value) {
+    localStorage.setItem(SETTINGS_MPRINTERPOLATION, value)  
 }
 
 /**

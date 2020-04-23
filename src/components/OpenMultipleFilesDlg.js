@@ -35,7 +35,7 @@ class OpenMultipleFilesDlg extends PureComponent {
     this.step = this.props.files.length / 50
     this.nextProgress = this.step
     this.t0 = performance.now()
-    
+
     for (let i=0; i<this.props.files.length; i++) {
       const file = this.props.files[i]
       if (this.state.cancel) {
@@ -55,9 +55,11 @@ class OpenMultipleFilesDlg extends PureComponent {
         //try {
           const instanceNumber = this.getInstanceNumber(image)
           const sliceDistance = this.getSliceDistance(image)
-          const sliceLocation = this.getSliceLocation(image)
+          const sliceLocation = this.getSliceLocation(image)         
+
           //this.slicesDistance.push(sliceDistance)
           //console.log('sliceDistance: ', sliceDistance)
+  
           let item = null
           if (this.props.origin === 'local')
             item = {
@@ -79,7 +81,7 @@ class OpenMultipleFilesDlg extends PureComponent {
               rows: this.getRows(image), 
               columns: this.getColumns(image), 
               sliceDistance: sliceDistance,
-              sliceLocation: sliceLocation,
+              sliceLocation: sliceLocation,            
             }
           this.items.push(item)
           this.count++
@@ -147,6 +149,8 @@ class OpenMultipleFilesDlg extends PureComponent {
 		return value    
   }  
 
+  // see https://stackoverflow.com/questions/37730772/get-distance-between-slices-in-dicom
+  //
   getSliceDistance = (image) => {
     try {
       const ipp = image.data.string('x00200032').split('\\') // Image Position Patient
