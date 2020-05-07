@@ -33,6 +33,7 @@
 	<li>Displaying DICOM attributes of image.</li>
 	<li>Multi-view support, it can open up to 16 different files (1x1 to 4x4 grid).</li>
 	<li>Basic 2D Multiplanar reconstruction (MPR), this allow to reconstruct images in orthogonal planes (coronal, sagittal, axial).</li>
+	<li>Browser to explorer series and images.</li>
 	<li>Histogram window.</li>
 	<li>Save DICOM attributes as JSON or CSV file.</li>
 	<li>Save screenshot in JPEG or PNG format into local or sandbox file system.</li>
@@ -63,6 +64,7 @@
 	<li><a href="https://github.com/hammerjs/hammer.js/tree/master">hammer.js</a>, JavaScript library for detecting touch gestures.</li>
 	<li><a href="https://github.com/axios/axios">axios</a>, Promise based HTTP client for the browser and node.js.</li>
 	<li><a href="https://github.com/Stuk/jszip">JSZip</a>, Create, read and edit .zip files with Javascript.</li>
+	<li><a href="https://github.com/goldenyz/react-perfect-scrollbar">React-Perfect-Scrollbar</a>, Wrapper to allow use perfect-scrollbar in React.</li>
 </ul>
 
 
