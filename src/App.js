@@ -380,7 +380,7 @@ class App extends PureComponent {
   }
 
   handleOpenImage = (index) => {
-    //console.log('handleOpenImage : ', index)
+    console.log('handleOpenImage : ', index)
     //console.log('handleOpenImage - this.mprPlane: ', this.mprPlane)
     //console.log('handleOpenImage - this.state.sliceMax: ', this.state.sliceMax)
     //console.log('handleOpenImage - this.state.sliceIndex: ', this.state.sliceIndex)
@@ -1292,7 +1292,7 @@ class App extends PureComponent {
     this.setState({visibleVolumeBuilding: false}, () => {
       const plane = this.mprPlanePosition()
 
-      const index = Math.round(this.props.files.length / 2)
+      const index = Math.round(this.dicomViewersRefs[0].files.length / 2)
 
       if (this.dicomViewersRefs[0].volume === null)
         this.dicomViewersRefs[0].volume = this.volume
@@ -1414,7 +1414,7 @@ class App extends PureComponent {
     if (this.mprPlane === '' || force) {
       this.mprPlane = this.dicomViewersRefs[index].mprPlanePosition()
     }
-    //console.log('App - mprPlanePosition 2: ', this.mprPlane)
+    console.log('App - mprPlanePosition 2: ', this.mprPlane)
     if (this.mprPlane === 'sagittal')
       this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
     else if (this.mprPlane === 'coronal')
@@ -1595,13 +1595,12 @@ class App extends PureComponent {
     const isDicomdir = this.props.dicomdir !== null
     //const isMultipleFiles = this.files === null ? false : this.files.length > 1
     let isMultipleFiles = false
+    
     if (this.dicomViewersRefs[this.props.activeDcmIndex] === undefined) {
       isMultipleFiles = false
     } else {
       isMultipleFiles = this.dicomViewersRefs[this.props.activeDcmIndex].files === null ? false : this.dicomViewersRefs[this.props.activeDcmIndex].files.length > 1
     }
-      
-
     
     const openMenu = this.state.openMenu
     const openImageEdit = this.state.openImageEdit

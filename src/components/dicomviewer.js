@@ -407,8 +407,8 @@ class DicomViewer extends React.Component {
     }*/
 
     displayImageFromFiles = (index) => {
-      //console.log('displayImageFromFiles: ', index)
-      //console.log('displayImageFromFiles - this.files: ', this.files)
+      console.log('displayImageFromFiles: ', index)
+      console.log('displayImageFromFiles - this.files: ', this.files)
 
       const files = this.files === null ? this.props.files : this.files
 

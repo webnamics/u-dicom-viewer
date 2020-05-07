@@ -18,7 +18,6 @@ import {
   } from '../actions'
 
 import {
-    dicomDateTimeToLocale,
     groupBy,
 } from '../functions'
 
@@ -183,7 +182,7 @@ class Explorer extends PureComponent {
                 //this.files = this.series.seriesList.get(this.state.series[0])
 
                 //this.props.setFilesStore(this.files)
-                //this.props.onSelectSeries(this.files)
+                this.props.onSelectSeries(this.seriesList.get(seriesKeys[0]))
             })
 
             //this.props.setExplorerActiveSeriesIndex(0) 
@@ -196,6 +195,7 @@ class Explorer extends PureComponent {
         //console.log('Explorer - componentDidUpdate: ', this.state.series)
 
         for(let i=0; i < this.state.series.length; i++) {
+            console.log('Explorer - componentDidUpdate: ', this.seriesList.get(this.state.series[i]))
             this.dicomViewersRefs[i].runTool('setfiles', this.seriesList.get(this.state.series[i]))
             this.dicomViewersRefs[i].runTool('openimage', 0)
         }

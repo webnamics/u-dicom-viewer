@@ -201,13 +201,13 @@ export function dicomDateToLocale(dcmDate) {
 }
 
 export function dicomTimeToStr(dcmTime) {
-    const time = dcmTime.substring(0, 2)+':'+dcmTime.substring(2, 4)+':'+dcmTime.substring(4)
+    const time = dcmTime.substring(0, 2)+':'+dcmTime.substring(2, 4)+':'+dcmTime.substring(4, 6)
     return time
 }
 
 export function dicomDateTimeToLocale(dateTime) {
     const date = new Date(dateTime.substring(0, 4)+'-'+dateTime.substring(4, 6)+'-'+dateTime.substring(6, 8))
-    const time = dateTime.substring(9, 11)+':'+dateTime.substring(11, 13)+':'+dateTime.substring(13)
+    const time = dateTime.substring(9, 11)+':'+dateTime.substring(11, 13)+':'+dateTime.substring(13, 15)
     const localeDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
     return `${localeDate} - ${time}`
 }
