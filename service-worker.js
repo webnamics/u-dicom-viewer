@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/u-dicom-viewer/precache-manifest.c5abb5f72e051d50186aa5d9905fcaf4.js"
+  "/u-dicom-viewer/precache-manifest.f32239ab381c7dc7334a3f3906e49f7b.js"
 );
 
 self.addEventListener('message', (event) => {
