@@ -2,13 +2,18 @@ import {
   CLEAR_STORE, 
   LOCALFILE_STORE,
   FSFILE_STORE,
+  ALLFILES_STORE,
   FILES_STORE,
+  SERIES_STORE,
   DCM_IS_OPEN, 
   DCM_TOOL, 
   ACTIVE_DCM_INDEX, 
-  ACTIVE_DCM, 
-  //DCM_IMAGE,
+  ACTIVE_DCM,
   ACTIVE_MEASUREMENTS,
+  EXPLORER_STORE,
+  EXPLORER_ACTIVE_PATIENT_INDEX,
+  EXPLORER_ACTIVE_STUDY_INDEX,
+  EXPLORER_ACTIVE_SERIES_INDEX,
   LAYOUT,
   DICOMDIR,
   FSCURRENTDIR,
@@ -16,8 +21,6 @@ import {
   FSZIPPEDFILE,
   FSREFRESH,
   VOLUME_STORE,
-  //LUT_STORE,
-  //SANDBOXEDFILE_STORE,
 } from '../actions'
 
 export default function storeReducer(state={}, action) {
@@ -28,12 +31,17 @@ export default function storeReducer(state={}, action) {
         return {
           localFile: state.localFile,
           fsFile: state.fsFile,
+          allfiles: null,
           files: null, 
+          series: null,
           isOpen: state.isOpen.map((el, i) => i === state.activeDcmIndex ? false : el),
           tool: null,
           activeDcmIndex: state.activeDcmIndex,
           activeDcm: state.activeDcm,
-          //images: [],
+          explorer: state.explorer,
+          explorerActivePatientIndex: state.explorerActivePatientIndex,
+          explorerActiveStudyIndex: state.explorerActiveStudyIndex,
+          explorerActiveSeriesIndex: state.explorerActiveSeriesIndex,
           measurements: null,
           layout: state.layout,
           dicomdir: state.dicomdir, 
@@ -41,7 +49,6 @@ export default function storeReducer(state={}, action) {
           fsCurrentList: state.fsCurrentList,
           fsZippedFile: null,
           fsRefresh: state.fsRefresh,
-          //sandboxedFile: state.sandboxedFile,
           volume: null,
           lut: null,
         }    
@@ -60,19 +67,28 @@ export default function storeReducer(state={}, action) {
             fsFile: action.fsFile,   
           }
 
+      case ALLFILES_STORE:
+          return {
+            ...state,
+            allFiles: action.allFiles,  
+          } 
+
       case FILES_STORE:
           return {
             ...state,
             files: action.files,  
           } 
 
+      case SERIES_STORE:
+          return {
+            ...state,
+            series: action.series,  
+          }
+
       case DCM_IS_OPEN:
           return {
             ...state,
-            isOpen: state.isOpen.map((el, i) => i === action.value.index ? action.value.value : el),
-            /*images: [
-              ...state.images
-            ],*/            
+            isOpen: state.isOpen.map((el, i) => i === action.value.index ? action.value.value : el),    
             measurements: state.measurements,
             layout: state.layout,    
             dicomdir: state.dicomdir,    
@@ -84,9 +100,6 @@ export default function storeReducer(state={}, action) {
           return {
             ...state,
             tool: action.tool,
-            /*images: [
-              ...state.images
-            ],*/  
             measurements: state.measurements,
             layout: state.layout,
             dicomdir: state.dicomdir,
@@ -98,9 +111,6 @@ export default function storeReducer(state={}, action) {
           return {
             ...state,
             activeDcmIndex: action.activeDcmIndex,
-            /*images: [
-              ...state.images
-            ],*/  
             measurements: state.measurements,
             layout: state.layout,
             dicomdir: state.dicomdir,
@@ -112,40 +122,46 @@ export default function storeReducer(state={}, action) {
           return {
             ...state,
             activeDcm: action.activeDcm,
-            /*images: [
-              ...state.images
-            ],*/  
             measurements: state.measurements,
             layout: state.layout,
             dicomdir: state.dicomdir,
             fsCurrentDir: state.fsCurrentDir,
             fsCurrentList: state.fsCurrentList,  
           }            
-/*
-      case DCM_IMAGE:
-          return {
-            ...state,
-            images: [
-              ...state.images,
-              action.images,
-            ],  
-            measurements: state.measurements,
-            layout: state.layout,
-            dicomdir: state.dicomdir,
-            fsCurrentDir: state.fsCurrentDir,
-            fsCurrentList: state.fsCurrentList,  
-          } 
-*/
+
       case ACTIVE_MEASUREMENTS:
         return {
           ...state,
           measurements: [...action.measurements],
-        }             
+        }  
+
+      case EXPLORER_STORE:
+        return {
+          ...state,
+          explorer: action.explorer,
+        }  
+
+      case EXPLORER_ACTIVE_PATIENT_INDEX:
+        return {
+          ...state,
+          explorerActivePatientIndex: action.explorerActivePatientIndex,
+        }
+
+      case EXPLORER_ACTIVE_STUDY_INDEX:
+        return {
+          ...state,
+          explorerActiveStudyIndex: action.explorerActiveStudyIndex,
+        }
+
+      case EXPLORER_ACTIVE_SERIES_INDEX:
+        return {
+          ...state,
+          explorerActiveSeriesIndex: action.explorerActiveSeriesIndex,
+        }    
 
       case LAYOUT:
             return {
               ...state,
-              //images: [...state.images],
               measurements: state.measurements,
               layout: action.layout,
               dicomdir: state.dicomdir,
@@ -188,20 +204,7 @@ export default function storeReducer(state={}, action) {
           ...state,
           volume: action.volume,        
         }      
-/*
-      case LUT_STORE:
-        return {
-          ...state,
-          lut: action.lut,        
-        }                  
 
-      case SANDBOXEDFILE_STORE:
-        return {
-          ...state,
-          //localfile: null,
-          sandboxedFile: action.sandboxedFile,        
-        } 
-*/
       default:
           return state
     }

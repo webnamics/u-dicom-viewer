@@ -4,12 +4,17 @@ import storeReducer from '../reducers/index'
 let initialState = {
     localFile: null,
     fsFile: null,
+    allFiles: null,
     files: null,
+    series: null,
     isOpen: new Array(16).fill(false),
     tool: null,
     activeDcmIndex: 0,
     activeDcm: null,
-    //images: [],
+    explorer: null,
+    explorerActivePatientIndex: 0,
+    explorerActiveStudyIndex: 0,
+    explorerActiveSeriesIndex: 0,
     measurements: [],
     layout: [1,1], // first element represents the rows, second the columns
     dicomdir: null,
@@ -18,8 +23,6 @@ let initialState = {
     fsZippedFile: null,
     fsRefresh: false,
     volume: null,
-    //lut: null,
-    //sandboxedFile: null,
 }
 
 const store = createStore(storeReducer, initialState,

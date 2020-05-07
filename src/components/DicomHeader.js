@@ -8,6 +8,8 @@ import Icon from '@mdi/react'
 import IconButton from '@material-ui/core/IconButton'
 import { SETTINGS_DCMHEADER } from '../constants/settings'
 import { toCsv } from '../functions'
+import 'react-perfect-scrollbar/dist/css/styles.css'
+import PerfectScrollbar from 'react-perfect-scrollbar'
 import {
     mdiContentSaveOutline
 } from '@mdi/js'
@@ -96,23 +98,24 @@ const DicomHeader = ({dcmViewer, classes, color}) => {
     console.log('dcmViewer', dcmViewer)
 
     return (
+      <PerfectScrollbar>
         <div style={{marginTop: '48px'}}>
-        <Toolbar variant="dense">
-          <Typography variant="subtitle1" className={classes.title}>
-            Dicom Header
-          </Typography>
-          <div className={classes.grow} />
-          <IconButton color="inherit" onClick={saveHeader}>
-            <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={color} />
-          </IconButton>
-        </Toolbar>
-        <div>
+          <Toolbar variant="dense">
+            <Typography variant="subtitle1" className={classes.title}>
+              Dicom Header
+            </Typography>
+            <div className={classes.grow} />
+            <IconButton color="inherit" onClick={saveHeader}>
+              <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={color} />
+            </IconButton>
+          </Toolbar>    
+          <div>          
             <List dense={true} component="div">
                 {listItems}             
             </List>
-        </div>      
-      </div>
-
+          </div>      
+        </div>
+      </PerfectScrollbar>
     )
 }
   

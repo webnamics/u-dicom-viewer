@@ -8,8 +8,12 @@ import Collapse from '@material-ui/core/Collapse'
 import * as dicomParser from 'dicom-parser'
 import ExpandLessIcon from '@material-ui/icons/ExpandLess'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
+import 'react-perfect-scrollbar/dist/css/styles.css'
+import PerfectScrollbar from 'react-perfect-scrollbar'
 import fs from '../fs/fs'
 import {
+  dicomDateToLocale,
+  dicomTimeToStr,
   getSettingsDicomdirView,
 } from '../functions'
 import {
@@ -30,6 +34,10 @@ const styles = theme => ({
     fontSize:'0.80em',
   }
 })
+
+const styleScrollbar = {
+  height: 'calc(100vh - 48px)',
+}
 
 const ExpandIcon = ({ expanded }) => expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
 
@@ -67,6 +75,7 @@ class Dicomdir extends PureComponent {
           series.unshift({id: obj.id, key: obj.key, number: obj.number, value: obj.value, expanded: obj.expanded, children: images})
           images = []
         } else if (obj.key === 'study') {
+          //console.log('study obj: ', obj)
           study.unshift({id: obj.id, key: obj.key, value: obj.value, expanded: obj.expanded, children: series})
           series = []
         } else if (obj.key === 'patient') {
@@ -89,7 +98,8 @@ class Dicomdir extends PureComponent {
                 output.push({id: id, key: 'patient', value: e.dataSet.string('x00100010'), expanded: true})
             } else if (e.dataSet.string('x00041430') === 'STUDY') {
                 //console.log("Study - "+e.dataSet.string('x00081030'))
-                output.push({id: id, key: 'study', value: e.dataSet.string('x00081030'), expanded: true})
+                const value = `${dicomDateToLocale(e.dataSet.string('x00080020'))} - ${dicomTimeToStr(e.dataSet.string('x00080030'))}`
+                output.push({id: id, key: 'study', value: value, expanded: true})
             } else if (e.dataSet.string('x00041430') === 'SERIES') {
                 //console.log("Series number - "+e.dataSet.string('x00200011'))
                 output.push({id: id, key: 'series', number: e.dataSet.string('x00200011'), value: e.dataSet.string('x00080060'), expanded: true})
@@ -163,6 +173,11 @@ class Dicomdir extends PureComponent {
       }
     }
 
+    studyText = (study) => {
+      //console.log('study: ', study)
+      return study.value
+    }
+
     render() {   
       const { classes } = this.props
 
@@ -174,7 +189,10 @@ class Dicomdir extends PureComponent {
       }
 
       return (
+        <PerfectScrollbar>
+        <div style={styleScrollbar}>  
         <div style={styleComponent}>
+          
           <List>
             {this.state.data.map(({ ...patient }, index) => (
               <Fragment key={index}>
@@ -186,7 +204,7 @@ class Dicomdir extends PureComponent {
                   {patient.children.map(study => (
                     <Fragment key={study.id}>
                       <ListItem key={study.id} button dense onClick={() => this.onClick(study.id)} className={classes.study}>
-                        <ListItemText primary={study.value} secondary={study.key} classes={{primary:classes.listItemText, secondary:classes.listItemText}} />
+                        <ListItemText primary={this.studyText(study)} secondary={study.key} classes={{primary:classes.listItemText, secondary:classes.listItemText}} />
                         <ExpandIcon expanded={study.expanded} />
                       </ListItem>
                       <Collapse in={study.expanded}>
@@ -199,7 +217,7 @@ class Dicomdir extends PureComponent {
                             <Collapse in={series.expanded}>
                               {series.children.map(images => (
                                 <ListItem key={images.id} button dense onClick={() => this.onClick(images.id)} className={classes.images}>
-                                  <ListItemText primary={images.value} classes={{primary:classes.listItemText}} />
+                                  <ListItemText primary={images.value} secondary={images.key} classes={{primary:classes.listItemText, secondary:classes.listItemText}} />
                                 </ListItem>
                               ))}
                             </Collapse>
@@ -213,6 +231,8 @@ class Dicomdir extends PureComponent {
             ))}
           </List>
         </div>
+        </div>
+        </PerfectScrollbar>
       )
     }
 }   

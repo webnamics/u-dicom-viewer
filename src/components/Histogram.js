@@ -157,6 +157,7 @@ class Histogram extends PureComponent {
 
     updateCanvas() {
       const image = this.props.activeDcm.image
+      if (image === null) return
       //const element = this.props.element
       const maxPixelValue = image.maxPixelValue
       const minPixelValue = image.minPixelValue

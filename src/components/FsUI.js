@@ -24,6 +24,8 @@ import Toolbar from '@material-ui/core/Toolbar'
 import Tooltip from '@material-ui/core/Tooltip'
 import Typography from '@material-ui/core/Typography'
 // import {List as ListVirtual} from 'react-virtualized'
+import 'react-perfect-scrollbar/dist/css/styles.css'
+import PerfectScrollbar from 'react-perfect-scrollbar'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import fs from '../fs/fs'
@@ -64,6 +66,9 @@ const styles = theme => ({
     table: {
         minWidth: 250,
     },
+    tableCellText: {
+        fontSize: '0.80em',
+    },
     toolbarButtons: {
         marginLeft: 'auto',
         marginRight: -20,
@@ -86,6 +91,10 @@ const styles = theme => ({
     },
 })
 
+const styleScrollbar = {
+    height: 'calc(100vh - 48px)'
+}
+
 class FsUI extends PureComponent {
     constructor(props) {
         super(props)
@@ -93,6 +102,7 @@ class FsUI extends PureComponent {
         this.cut = false
         this.itemsCount = 0
         this.saveAsField = React.createRef()
+
       }
 
     state = {
@@ -135,7 +145,7 @@ class FsUI extends PureComponent {
                 //this.fsListDir(this.props.fsCurrentDir)
             })
         } else {
-            this.fsListDir(this.props.fsCurrentDir)
+            //this.fsListDir(this.props.fsCurrentDir)
         }
     }
 
@@ -201,15 +211,15 @@ class FsUI extends PureComponent {
     fsListDir(dir) {
         //console.log('fsListDir: ', dir)
         let listItems = []
-        fs.transaction('r', fs.files, async ()=> {
-            await fs.files.where({parent: dir, type: 'dir'}).sortBy('name').then((list) => { // first list all dirs
+        fs.transaction('r', fs.files, () => {
+            fs.files.where({parent: dir, type: 'dir'}).sortBy('name').then((list) => { // first list all dirs
                 listItems = list
             }).then(() => { // after list all files
                 fs.files.where({parent: dir}).and(item => item.type !== 'dir').sortBy('name').then((list) => {
                     listItems = listItems.concat(list)
                 }).then(() => {
                     this.props.setCurrentList(listItems)
-                    setTimeout(() => this.setState({visibleWaiting: false}), 2000)
+                    setTimeout(() => this.setState({visibleWaiting: false}), 1000)
                 })
             })
         })
@@ -242,13 +252,13 @@ class FsUI extends PureComponent {
         await fs.transaction('r', fs.files, async () => {
             this.state.selected.forEach( async (name, index) => {
                 await fs.files.where({parent: this.props.fsCurrentDir, name: name}).first((item) => {
-                    console.log('item: ', item)
+                    //console.log('item: ', item)
                     if (item !== undefined && item.type !== 'dir') {
                         this.files.push(item)
                     } else if (item.type === 'dir') {
                         fs.files.where('parent').startsWithIgnoreCase(item.name).each((e) => {
                             if (e !== undefined && e.type !== 'dir') {
-                                console.log(' e: ', e) 
+                                //console.log(' e: ', e) 
                                 this.files.push(e)
                             }
                         })
@@ -262,7 +272,6 @@ class FsUI extends PureComponent {
         if (this.state.selected.length === 0) return
         this.files = []
         this.openSelectedFilesRetrieveItems().then(() => {
-            console.log('this.files: ', this.files) 
             this.setState({visibleOpenMultipleFilesDlg: true})
             this.setState({selected: []})  
         })
@@ -348,8 +357,8 @@ class FsUI extends PureComponent {
     }
 
     saveItem = () => {
-        console.log('this.props.localFileStore: ', this.props.localFileStore)
-        console.log('this.props.fsFileStore: ', this.props.fsFileStore)
+        //console.log('this.props.localFileStore: ', this.props.localFileStore)
+        //console.log('this.props.fsFileStore: ', this.props.fsFileStore)
         //console.log('this.props.activeDcm: ', this.props.activeDcm)
 
         if (this.props.localFileStore !== null) {
@@ -581,14 +590,16 @@ class FsUI extends PureComponent {
             )
         }
         this.setState({selected: newSelected}, () => {
-            console.log('this.state.selected: ', this.state.selected)
+            //console.log('this.state.selected: ', this.state.selected)
         })
     }
 
     itemDoubleClick = (e, item) => {
         if (item.type === 'dir') {
             this.setState({visibleWaiting: true})
-            this.props.setCurrentDir(this.fsBuildParent(item.parent, item.name))
+            const fsCurrentDir = this.fsBuildParent(item.parent, item.name)
+            this.props.setCurrentDir(fsCurrentDir)
+            this.fsListDir(fsCurrentDir)
         } else if (item.name === 'DICOMDIR') {
             this.props.onOpenDicomdir(item)
         } else {
@@ -676,235 +687,242 @@ class FsUI extends PureComponent {
         //console.log('this.props.fsCurrentDir: ', this.props.fsCurrentDir)
 
         return (
-            <div style={styleComponent}>
-                { visibleTextField ? 
-                    <Paper component="form" className={classes.textPaper}>
-                        <InputBase
-                            autoFocus
-                            className={classes.textInput}
-                            placeholder={this.state.textFieldLabel}
-                            defaultValue={this.state.textFieldValue}
-                            onChange={(event) => {
-                                this.setState({textFieldValue: event.target.value})
-                            }}
-                        />
-                        <IconButton className={classes.textButton} onClick={this.confirmText}>
-                            <Icon path={mdiCheck} size={'1.2rem'} color={this.props.color} />
-                        </IconButton>
-                        <IconButton className={classes.textButton} onClick={this.cancelDir}>
-                            <Icon path={mdiClose} size={'1.2rem'} color={this.props.color} />
-                        </IconButton>                        
-                    </Paper>
-                  : 
-                    <div>
-
+            <PerfectScrollbar>
+                <div style={styleScrollbar}> 
+                    <div style={styleComponent}>
+                    { visibleTextField ? 
+                        <Paper component="form" className={classes.textPaper}>
+                            <InputBase
+                                autoFocus
+                                className={classes.textInput}
+                                placeholder={this.state.textFieldLabel}
+                                defaultValue={this.state.textFieldValue}
+                                onChange={(event) => {
+                                    this.setState({textFieldValue: event.target.value})
+                                }}
+                            />
+                            <IconButton className={classes.textButton} onClick={this.confirmText}>
+                                <Icon path={mdiCheck} size={'1.2rem'} color={this.props.color} />
+                            </IconButton>
+                            <IconButton className={classes.textButton} onClick={this.cancelDir}>
+                                <Icon path={mdiClose} size={'1.2rem'} color={this.props.color} />
+                            </IconButton>                        
+                        </Paper>
+                    : 
                         <div>
-                            <Toolbar variant="dense">
-                                <div className={classes.leftButtons}>
-                                { visibleWaiting ?
-                                    <CircularProgress style={{marginLeft: '10px'}} size={20} color="secondary" />
-                                  : 
-                                    <Tooltip title="Previous folder">
-                                        <IconButton color="inherit" onClick={this.previousDir} >
-                                            <Icon path={mdiChevronLeft} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>       
-                                    </Tooltip>                                     
-                                }
-                    
-                                </div>
-                                <div className={classes.toolbarButtons}>
-                                    <Tooltip title="Select/unselect all files">
-                                        <IconButton color="inherit" onClick={this.doSelectUnselect}>
-                                            <Icon path={mdiCheckBoxOutline} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>
-                                    </Tooltip>    
-                                    <Tooltip title="Open selected files">
-                                        <IconButton color="inherit" onClick={this.openSelectedFiles}>
-                                            <Icon path={mdiFolderOutline} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>
-                                    </Tooltip>                            
-                                    <Tooltip title="Create a new directory">
-                                        <IconButton color="inherit" onClick={this.createDir}>
-                                            <Icon path={mdiFolderPlusOutline} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Rename the last selected item">
-                                        <IconButton color="inherit" onClick={this.renameItem}>
-                                            <Icon path={mdiSquareEditOutline} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton> 
-                                    </Tooltip>
 
-                                    <IconButton color="inherit" onClick={this.showOthers}>
-                                        <Icon path={mdiDotsHorizontal} size={'1.2rem'} color={this.props.color} />
-                                    </IconButton>                           
-                                </div>            
-                            </Toolbar>
-                        </div> 
-
-                        { visibleOthers ?
                             <div>
                                 <Toolbar variant="dense">
+                                    <div className={classes.leftButtons}>
+                                    { visibleWaiting ?
+                                        <CircularProgress style={{marginLeft: '10px'}} size={20} color="secondary" />
+                                    : 
+                                        <Tooltip title="Previous folder">
+                                            <IconButton color="inherit" onClick={this.previousDir} >
+                                                <Icon path={mdiChevronLeft} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>       
+                                        </Tooltip>                                     
+                                    }
+                        
+                                    </div>
                                     <div className={classes.toolbarButtons}>
-                                        <Tooltip title="Move the selected items to the clipboard">                          
-                                            <IconButton color="inherit" onClick={this.cutItem}>
-                                                <Icon path={mdiContentCut} size={'1.2rem'} color={this.props.color} />
-                                            </IconButton> 
-                                        </Tooltip>  
-                                        <Tooltip title="Copy the selected items to the clipboard">
-                                            <IconButton color="inherit" onClick={this.copyItem}>
-                                                <Icon path={mdiContentCopy} size={'1.2rem'} color={this.props.color} />
+                                        <Tooltip title="Select/unselect all files">
+                                            <IconButton color="inherit" onClick={this.doSelectUnselect}>
+                                                <Icon path={mdiCheckBoxOutline} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>
+                                        </Tooltip>    
+                                        <Tooltip title="Open selected files">
+                                            <IconButton color="inherit" onClick={this.openSelectedFiles}>
+                                                <Icon path={mdiFolderOutline} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>
+                                        </Tooltip>                            
+                                        <Tooltip title="Create a new directory">
+                                            <IconButton color="inherit" onClick={this.createDir}>
+                                                <Icon path={mdiFolderPlusOutline} size={'1.2rem'} color={this.props.color} />
                                             </IconButton>
                                         </Tooltip>
-                                        <Tooltip title="Paste clipboard contents to current location">                             
-                                            <IconButton color="inherit" onClick={this.pasteItem}>
-                                                <Icon path={mdiContentPaste} size={'1.2rem'} color={this.props.color} />
-                                            </IconButton>   
-                                        </Tooltip>  
-                                        <Tooltip title="Delete the selected items">    
-                                            <IconButton color="inherit" onClick={this.showDeleteDlg}>
-                                                <Icon path={mdiDeleteOutline} size={'1.2rem'} color={this.props.color} />
-                                            </IconButton>  
-                                        </Tooltip>                                    
-                                        <Tooltip title="Save the opened image to sandbox file system"> 
-                                            <IconButton color="inherit" onClick={this.saveItem}>
-                                                <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={this.props.color} />
-                                            </IconButton>      
+                                        <Tooltip title="Rename the last selected item">
+                                            <IconButton color="inherit" onClick={this.renameItem}>
+                                                <Icon path={mdiSquareEditOutline} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton> 
                                         </Tooltip>
-                                        <Tooltip title="Export the selected items as zipped archive">
-                                            <IconButton color="inherit" onClick={this.exportItem}>
-                                                <Icon path={mdiExportVariant} size={'1.2rem'} color={this.props.color} />
-                                            </IconButton>   
-                                        </Tooltip>     
-                                        {/*<IconButton color="inherit" onClick={this.downloadItem}>
-                                            <Icon path={mdiDownload} size={'1.2rem'} color={this.props.color} />
-                                        </IconButton>*/}                                     
+
+                                        <IconButton color="inherit" onClick={this.showOthers}>
+                                            <Icon path={mdiDotsHorizontal} size={'1.2rem'} color={this.props.color} />
+                                        </IconButton>                           
                                     </div>            
                                 </Toolbar>
-                            </div>
-                        : null
-                        }
+                            </div> 
 
-                        <div>
-                            <div>
-                                <Typography 
-                                    type="caption text" 
-                                    style={{fontSize: '0.75em', marginLeft: '15px', color: 'rgba(146, 146, 146, 1)', float: 'left'}}>
-                                        {'/'+this.props.fsCurrentDir+' '}
-                                </Typography>
-                            </div>
-                            <div>
-                                <Typography 
-                                    type="caption text" 
-                                    style={{fontSize: '0.75em', marginRight: '5px', color: 'rgba(146, 146, 146, 1)', float: 'right'}}>
-                                        { totalItemsCount }
-                                </Typography>
-                            </div>
-                        </div>    
+                            { visibleOthers ?
+                                <div>
+                                    <Toolbar variant="dense">
+                                        <div className={classes.toolbarButtons}>
+                                            <Tooltip title="Move the selected items to the clipboard">                          
+                                                <IconButton color="inherit" onClick={this.cutItem}>
+                                                    <Icon path={mdiContentCut} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton> 
+                                            </Tooltip>  
+                                            <Tooltip title="Copy the selected items to the clipboard">
+                                                <IconButton color="inherit" onClick={this.copyItem}>
+                                                    <Icon path={mdiContentCopy} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Paste clipboard contents to current location">                             
+                                                <IconButton color="inherit" onClick={this.pasteItem}>
+                                                    <Icon path={mdiContentPaste} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton>   
+                                            </Tooltip>  
+                                            <Tooltip title="Delete the selected items">    
+                                                <IconButton color="inherit" onClick={this.showDeleteDlg}>
+                                                    <Icon path={mdiDeleteOutline} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton>  
+                                            </Tooltip>                                    
+                                            <Tooltip title="Save the opened image to sandbox file system"> 
+                                                <IconButton color="inherit" onClick={this.saveItem}>
+                                                    <Icon path={mdiContentSaveOutline} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton>      
+                                            </Tooltip>
+                                            <Tooltip title="Export the selected items as zipped archive">
+                                                <IconButton color="inherit" onClick={this.exportItem}>
+                                                    <Icon path={mdiExportVariant} size={'1.2rem'} color={this.props.color} />
+                                                </IconButton>   
+                                            </Tooltip>     
+                                            {/*<IconButton color="inherit" onClick={this.downloadItem}>
+                                                <Icon path={mdiDownload} size={'1.2rem'} color={this.props.color} />
+                                            </IconButton>*/}                                     
+                                        </div>            
+                                    </Toolbar>
+                                </div>
+                            : null
+                            }
 
-                        { visibleWaiting ?
-                            <div style={{marginTop: '20px', position: 'absolute'}}>
-                                <LinearProgress color="secondary" />
-                            </div>
-                          : null  
-                        }
-    
-                    </div>
+                            <div>
+                                <div>
+                                    <Typography 
+                                        type="caption text" 
+                                        style={{fontSize: '0.75em', marginLeft: '15px', color: 'rgba(146, 146, 146, 1)', float: 'left'}}>
+                                            {'/'+this.props.fsCurrentDir+' '}
+                                    </Typography>
+                                </div>
+                                <div>
+                                    <Typography 
+                                        type="caption text" 
+                                        style={{fontSize: '0.75em', marginRight: '5px', color: 'rgba(146, 146, 146, 1)', float: 'right'}}>
+                                            { totalItemsCount }
+                                    </Typography>
+                                </div>
+                            </div>    
+
+                            { visibleWaiting ?
+                                <div style={{marginTop: '20px', position: 'absolute'}}>
+                                    <LinearProgress color="secondary" />
+                                </div>
+                            : null  
+                            }
+        
+                        </div>
+                        
+                    }
                     
-                }
-                <div style={{height: '200px'}}>
-                    <TableContainer component={Paper}>
-                        <Table className={classes.table} size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Name</TableCell>
-                                    <TableCell align="left">Type</TableCell>
-                                    <TableCell align="left">Size</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                            {this.props.fsCurrentList.map((row) => {
-                                const isItemSelected = isSelected(row.name)
-                                return (
-                                    <TableRow 
-                                        key={`${row.parent}/${row.name}`} 
-                                        role='button' 
-                                        hover
-                                        selected={isItemSelected}
-                                        onClick={(e) => {this.itemClick(e, row)}}
-                                        onDoubleClick={(e) => {this.itemDoubleClick(e, row)}}
-                                        onTouchStart={(e) => this.mouseDown(e, row)} 
-                                        onTouchEnd={(e) => this.mouseUp(e, row)}
-                                        onMouseDown={(e) => this.mouseDown(e, row)} 
-                                        onMouseUp={(e) => this.mouseUp(e, row)}
-                                    >
-                                        <TableCell component="th" scope="row">
-                                            {row.name}
-                                        </TableCell>
-                                        <TableCell align="left">{row.type}</TableCell>
-                                        <TableCell align="left">{formatBytes(row.size)}</TableCell>
+                    <div style={{height: '200px'}}>
+                        <TableContainer component={Paper}>
+                            <Table className={classes.table} size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Name</TableCell>
+                                        <TableCell align="left">Type</TableCell>
+                                        <TableCell align="left">Size</TableCell>
                                     </TableRow>
-                                )
-                            })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </div>   
+                                </TableHead>
+                                <TableBody>
+                                {this.props.fsCurrentList.map((row) => {
+                                    const isItemSelected = isSelected(row.name)
+                                    return (
+                                        <TableRow 
+                                            key={`${row.parent}/${row.name}`} 
+                                            role='button' 
+                                            hover
+                                            selected={isItemSelected}
+                                            onClick={(e) => {this.itemClick(e, row)}}
+                                            onDoubleClick={(e) => {this.itemDoubleClick(e, row)}}
+                                            onTouchStart={(e) => this.mouseDown(e, row)} 
+                                            onTouchEnd={(e) => this.mouseUp(e, row)}
+                                            onMouseDown={(e) => this.mouseDown(e, row)} 
+                                            onMouseUp={(e) => this.mouseUp(e, row)}
+                                        >
+                                            <TableCell component="th" scope="row">
+                                            <Typography className={classes.tableCellText}>
+                                                {row.name}
+                                            </Typography>    
+                                            </TableCell>
+                                            <TableCell align="left">{row.type}</TableCell>
+                                            <TableCell align="left">{formatBytes(row.size)}</TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>   
 
-                <Dialog
-                    open={visibleDeleteDlg}
-                    onClose={this.hideDeleteDlg}
-                >
-                    <DialogTitle>{"Are you sure to delete selected items?"}</DialogTitle>
-                    <DialogActions>
-                        <Button onClick={this.hideDeleteDlg}>
-                            Cancel
-                        </Button>
-                        <Button onClick={this.confirmDeleteDlg} autoFocus>
-                            Ok
-                        </Button>
-                    </DialogActions>
-                </Dialog>    
+                    <Dialog
+                        open={visibleDeleteDlg}
+                        onClose={this.hideDeleteDlg}
+                    >
+                        <DialogTitle>{"Are you sure to delete selected items?"}</DialogTitle>
+                        <DialogActions>
+                            <Button onClick={this.hideDeleteDlg}>
+                                Cancel
+                            </Button>
+                            <Button onClick={this.confirmDeleteDlg} autoFocus>
+                                Ok
+                            </Button>
+                        </DialogActions>
+                    </Dialog>    
 
-                <Dialog
-                    open={visibleAlreadyExistDlg}
-                    onClose={this.hideAlreadyExistDlg}
-                >
-                    <DialogTitle>{"An item with this name already exists!"}</DialogTitle>
-                    <DialogActions>
-                        <Button onClick={this.hideAlreadyExistDlg} autoFocus>
-                            Ok
-                        </Button>
-                    </DialogActions>
-                </Dialog>    
+                    <Dialog
+                        open={visibleAlreadyExistDlg}
+                        onClose={this.hideAlreadyExistDlg}
+                    >
+                        <DialogTitle>{"An item with this name already exists!"}</DialogTitle>
+                        <DialogActions>
+                            <Button onClick={this.hideAlreadyExistDlg} autoFocus>
+                                Ok
+                            </Button>
+                        </DialogActions>
+                    </Dialog>    
 
-                <Dialog
-                    open={visibleOSaveAsDlg}
-                >
-                    <DialogTitle>Export archive</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            Specify a file name for the archive:
-                        </DialogContentText>
-                        <TextField
-                            autoFocus
-                            margin="dense"
-                            id="id-open-url"
-                            inputRef={input => (this.saveAsField = input)}
-                            fullWidth
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => this.hideSaveAs()} >
-                            Cancel
-                        </Button>
-                        <Button onClick={() => this.closeSaveAs()}>
-                            Ok
-                        </Button>
-                    </DialogActions>
-                </Dialog>          
+                    <Dialog
+                        open={visibleOSaveAsDlg}
+                    >
+                        <DialogTitle>Export archive</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                                Specify a file name for the archive:
+                            </DialogContentText>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                id="id-open-url"
+                                inputRef={input => (this.saveAsField = input)}
+                                fullWidth
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => this.hideSaveAs()} >
+                                Cancel
+                            </Button>
+                            <Button onClick={() => this.closeSaveAs()}>
+                                Ok
+                            </Button>
+                        </DialogActions>
+                    </Dialog>          
 
-                {visibleOpenMultipleFilesDlg ? <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={'fs'} /> : null}                    
-            </div>
+                    {visibleOpenMultipleFilesDlg ? <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={'fs'} /> : null}                    
+                </div>
+                </div>
+            </PerfectScrollbar>
         )
     }              
 }
