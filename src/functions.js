@@ -229,6 +229,13 @@ export function groupBy(list, keyGetter) {
     return map
   }
   
+export function objectIsEmpty(obj) {
+    if (obj === null || obj === undefined || Array.isArray(obj) || typeof obj !== 'object') {
+        return true
+    }
+    return Object.getOwnPropertyNames(obj).length === 0
+}
+
 export function capitalize(str) {
     if (str === undefined) 
         return ''

@@ -74,6 +74,7 @@ import {
   getSettingsDicomdirView,
   getSettingsMprInterpolation,
   groupBy,
+  objectIsEmpty,
   //getDicomSeriesDescription,
 } from './functions'
 import { 
@@ -232,7 +233,7 @@ class App extends PureComponent {
     this.mprPlane = ''
     
     this.volume = []
-    this.mprSliceIndex = [0, 0, 0]
+    //this.mprSliceIndex = [0, 0, 0]
 
     this.fileOpen = React.createRef()
     this.showFileOpen = this.showFileOpen.bind(this)
@@ -309,16 +310,18 @@ class App extends PureComponent {
 
   onLoadedImage = () => {
     //console.log('App - onLoadedImage: ')
-    if (this.state.visibleMprOrthogonal) return
-    this.mprPlane = ''
-    this.mprPlanePosition()
+    //if (this.state.visibleMprOrthogonal) return
+    //this.mprPlane = ''
+    //this.mprPlanePosition()
     //console.log('App - onLoadedImage - mprPlane: ', this.mprPlane)
-    /*if (this.mprPlane === 'sagittal')
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
-    else if (this.mprPlane === 'coronal')
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: false, visibleMprCoronal: true })  
-    else 
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })*/
+    /*if (!this.state.visibleMprOrthogonal) {
+      if (this.mprPlane === 'sagittal')
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
+      else if (this.mprPlane === 'coronal')
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: false, visibleMprCoronal: true })  
+      else 
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })
+    }*/
   }
 
   getDcmViewerRef = (index) => {
@@ -339,16 +342,12 @@ class App extends PureComponent {
   }
 
   handleOpenLocalFs = (filesSelected) => {
-    console.log('handleOpenLocalFs: ', filesSelected)
+    //console.log('handleOpenLocalFs: ', filesSelected)
     if (filesSelected.length > 1) {
       this.files = filesSelected
       this.changeLayout(1, 1)
       this.mprPlane = ''
       this.volume = []
-      //for(let i=0; i < 16; i++) 
-      //  if (this.dicomViewersRefs[i] !== undefined) {
-      //    // this.dicomViewersRefs[i].runTool('clear')
-      //  }
       this.setState({sliceIndex: 0,
                      sliceMax: 1,
                      visibleMprOrthogonal: false, 
@@ -359,7 +358,6 @@ class App extends PureComponent {
                      })
     } else {
       const file = filesSelected[0]
-      //console.log('file: ', file)
       if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip') {
         this.file = file
         this.url = null
@@ -374,28 +372,21 @@ class App extends PureComponent {
   }
 
   handleOpenSandboxFs = (fsItem) => {
-    //this.hideMainMenu()
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear')
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openSandboxFs', fsItem)
   }
 
   handleOpenImage = (index) => {
-    console.log('handleOpenImage : ', index)
-    //console.log('handleOpenImage - this.mprPlane: ', this.mprPlane)
-    //console.log('handleOpenImage - this.state.sliceMax: ', this.state.sliceMax)
-    //console.log('handleOpenImage - this.state.sliceIndex: ', this.state.sliceIndex)
+    //console.log('handleOpenImage : ', index)
     
     //this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = this.state.sliceMax
     this.dicomViewersRefs[this.props.activeDcmIndex].sliceIndex = this.state.sliceIndex
-    //const index = this.props.files.map(e => e.name).indexOf(this.series[idx].name)
-    //console.log('index: ', index)
 
     const visibleMprOrthogonal = this.state.visibleMprOrthogonal
     const visibleMprSagittal = this.state.visibleMprSagittal
     const visibleMprCoronal = this.state.visibleMprCoronal
     const visibleMprAxial = this.state.visibleMprAxial
-    const plane = this.mprPlanePosition()
-    //console.log('handleOpenImage - plane: ', plane)
+    const plane = this.mprPlanePosition() // plane of source
 
     if (visibleMprOrthogonal) {
       if (this.props.activeDcmIndex === 0) {
@@ -420,24 +411,29 @@ class App extends PureComponent {
         }        
       }
 
-    } else if ((plane === 'sagittal' && visibleMprSagittal) ||
-               (plane === 'axial' && visibleMprAxial) ||
-               (plane === 'coronal' && visibleMprCoronal))
-      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
-    else if (plane === 'sagittal' && visibleMprAxial)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)  
-    else if (plane === 'sagittal' && visibleMprCoronal)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)   
-    else if (plane === 'axial' && visibleMprSagittal)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
-    else if (plane === 'axial' && visibleMprCoronal)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
-    else if (plane === 'coronal' && visibleMprSagittal)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData) 
-    else if (plane === 'coronal' && visibleMprAxial)
-      this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData) 
-    else // it's not a possible MPR, then open as normal dicom file  
-      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)           
+    } else { 
+      if (objectIsEmpty(this.mprData)) { // works on new image
+        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+      } else if ((plane === 'sagittal' && visibleMprSagittal) ||
+          (plane === 'axial' && visibleMprAxial) ||
+          (plane === 'coronal' && visibleMprCoronal))
+        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+      else if (plane === 'sagittal' && visibleMprAxial)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)  
+      else if (plane === 'sagittal' && visibleMprCoronal)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)   
+      else if (plane === 'axial' && visibleMprSagittal)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+      else if (plane === 'axial' && visibleMprCoronal)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+      else if (plane === 'coronal' && visibleMprSagittal)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData) 
+      else if (plane === 'coronal' && visibleMprAxial)
+        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData) 
+      else { // it's not a possible MPR, then open as normal dicom file
+        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)           
+      }
+    }
   }
   
   handleOpenFileDicomdir = (file) => {
@@ -722,13 +718,7 @@ class App extends PureComponent {
       const sliceMax = this.props.files.length
 
       this.setState({sliceMax: sliceMax}, () => {
-        /*this.mprPlanePosition()
-        if (this.mprPlane === 'sagittal')
-          this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
-        else if (this.mprPlane === 'coronal')
-          this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: false, visibleMprCoronal: true })  
-        else 
-          this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })*/    
+ 
       })
 
       // check if there are studies and series, if so then prepare Explorer
@@ -739,20 +729,6 @@ class App extends PureComponent {
         list: patientList,
         keys: patientKeys
       }
-
-      /*const studyList = groupBy(this.props.files, a => a.study.studyId)
-      const studyKeys = [...studyList.keys()]
-      const study = {
-        list: studyList,
-        keys: studyKeys
-      }
-
-      const seriesList = groupBy(this.props.files, a => a.series.seriesNumber)
-      const seriesKeys = [...seriesList.keys()]
-      const series = {
-        list: seriesList,
-        keys: seriesKeys
-      }*/
 
       this.explorer = {
         folder: this.folder,
@@ -811,7 +787,13 @@ class App extends PureComponent {
   }
 
   clear = () => {  
-    this.setState({openImageEdit: false, openTools: false, openMpr: false, visibleToolbox: false, visibleMeasure: false, visibleHeader: false, visibleDicomdir: false})
+    this.setState({openImageEdit: false, 
+                   openTools: false, 
+                   openMpr: false, 
+                   visibleToolbox: false, 
+                   visibleMeasure: false, 
+                   visibleHeader: false, 
+                   visibleDicomdir: false})
     this.changeLayout(1, 1)
     this.props.setFilesStore(null)
     this.props.setDicomdirStore(null)
@@ -917,36 +899,28 @@ class App extends PureComponent {
   layoutGridClick = (index) => {
     if (isMobile && index === this.props.activeDcmIndex) return
 
+    //console.log('layoutGridClick: ', index)
     const sliceMax = this.dicomViewersRefs[index].sliceMax
     const sliceIndex = this.dicomViewersRefs[index].sliceIndex
-
     this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex})
 
-    this.mprSliceIndex[this.props.activeDcmIndex] = sliceIndex
+    //this.mprSliceIndex[this.props.activeDcmIndex] = sliceIndex
 
     this.props.setActiveDcmIndex(index)
 
     if (this.state.visibleMprOrthogonal) {
       if (index === 0) {
-        const sliceMax = this.props.files === null ? 1 : this.props.files.length
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[0]})
-
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[0]
       } else if (index === 1) {
-        const sliceMax = this.props.files[0].image.columns
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[1]})
-
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[1]
       } else if (index === 2) {
-        const sliceMax = this.props.files[0].image.rows
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[2]})
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[2]
       }
     }  
 
     const dcmViewer = this.getDcmViewerRef(index)
-
     this.props.setActiveMeasurements(dcmViewer.measurements)
     this.props.setActiveDcm({image: dcmViewer.image, element: dcmViewer.dicomImage, isDicom: dcmViewer.isDicom})
-
-    this.mprPlanePosition(true, index)
   }
  
   layoutGridTouch = (index) => {
@@ -957,22 +931,22 @@ class App extends PureComponent {
 
     this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex})
 
-    this.mprSliceIndex[this.props.activeDcmIndex] = sliceIndex
+    //this.mprSliceIndex[this.props.activeDcmIndex] = sliceIndex
 
     this.props.setActiveDcmIndex(index)
 
     if (this.state.visibleMprOrthogonal) {
       if (index === 0) {
-        const sliceMax = this.props.files === null ? 1 : this.props.files.length
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[0]})
+        //const sliceMax = this.props.files === null ? 1 : this.props.files.length
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[0]
 
       } else if (index === 1) {
-        const sliceMax = this.props.files[0].image.columns
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[1]})
+        //const sliceMax = this.props.files[0].image.columns
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[1]
 
       } else if (index === 2) {
-        const sliceMax = this.props.files[0].image.rows
-        this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[2]})
+        //const sliceMax = this.props.files[0].image.rows
+        this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex}) //this.mprSliceIndex[2]
       }
     }    
 
@@ -1102,7 +1076,7 @@ class App extends PureComponent {
 
     this.t0 = performance.now()
 
-    const files = this.props.files
+    const files = this.dicomViewersRefs[0].files
     const xPixelSpacing = getDicomPixelSpacing(files[0].image, 0)
     const spacingBetweenSlice = getDicomSpacingBetweenSlice(files[0].image)
     const sliceThickness = getDicomSliceThickness(files[0].image)
@@ -1134,6 +1108,7 @@ class App extends PureComponent {
       //console.log('method2, this.mprData.zDim: ', this.mprData.zDim)
       zDimMethod2 = true
     }
+    //console.log('this.mprData.zDim: ', this.mprData.zDim)
 
     if (files.length === this.mprData.zDim) { // slices contiguous
       for (let i = 0, len = files.length; i < len; i++) {
@@ -1287,35 +1262,43 @@ class App extends PureComponent {
   }
 
   changeToOrthogonalView = () => {  
+    //console.log('changeToOrthogonalView - files: ', this.dicomViewersRefs[0].files)
+    
     this.changeLayout(1, 3)
 
-    this.setState({visibleVolumeBuilding: false}, () => {
-      const plane = this.mprPlanePosition()
+    const index = Math.round(this.dicomViewersRefs[0].files.length / 2)
 
-      const index = Math.round(this.dicomViewersRefs[0].files.length / 2)
+    this.setState({visibleVolumeBuilding: false, sliceIndex: index}, () => {
+      const plane = this.mprPlanePosition()
 
       if (this.dicomViewersRefs[0].volume === null)
         this.dicomViewersRefs[0].volume = this.volume
 
-      this.mprSliceIndex[0] = index  
+      //this.mprSliceIndex[0] = index  
       this.dicomViewersRefs[0].runTool('openimage', index)
 
       if (this.dicomViewersRefs[1].volume === null)
         this.dicomViewersRefs[1].volume = this.volume
-      const xzIndex = Math.round(this.props.files[0].image.columns / 2)
-      this.mprSliceIndex[1] = xzIndex
+      const xzIndex = Math.round(this.mprData.zDim / 2) // this.dicomViewersRefs[0].files[index].image.columns
+      //this.mprSliceIndex[1] = xzIndex
+      this.dicomViewersRefs[1].sliceMax = this.mprData.zDim
+      //this.dicomViewersRefs[1].sliceIndex = 0
       this.dicomViewersRefs[1].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, xzIndex, this.mprData)  
       
       if (this.dicomViewersRefs[2].volume === null)
         this.dicomViewersRefs[2].volume = this.volume
-      const yzIndex = Math.round(this.props.files[0].image.rows / 2)
-      this.mprSliceIndex[2] = yzIndex
+      const yzIndex = Math.round(this.mprData.zDim / 2) // this.dicomViewersRefs[0].files[index].image.rows
+      //this.mprSliceIndex[2] = yzIndex
+      this.dicomViewersRefs[2].sliceMax = this.mprData.zDim
+      //this.dicomViewersRefs[2].sliceIndex = 0
       this.dicomViewersRefs[2].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, yzIndex, this.mprData)      
     })
 
   }
 
   changeToSagittalView = () => {
+    //console.log('changeToSagittalView: ')
+
     this.changeLayout(1, 1)
 
     this.setState({visibleVolumeBuilding: false}, () => {
@@ -1323,25 +1306,28 @@ class App extends PureComponent {
 
       if (this.dicomViewersRefs[this.props.activeDcmIndex].volume === null)
         this.dicomViewersRefs[this.props.activeDcmIndex].volume = this.volume
-      //console.log('mprSagittal, this.mprPlanePosition(): ', plane)
 
-      if (plane === 'sagittal') {
-        const sliceMax = this.props.files === null ? 1 : this.props.files.length
+        if (plane === 'sagittal') { 
+        const sliceMax = this.dicomViewersRefs[0].files === null ? 1 : this.dicomViewersRefs[0].files.length
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})
-        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
-
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+        })
       } else if (plane === 'axial') {
-        const sliceMax = this.props.files[0].image.columns
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})          
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
-
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        })   
       } else {
-        const sliceMax = this.props.files[0].image.rows
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax}) 
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        }) 
       }      
     })
   }
@@ -1354,25 +1340,30 @@ class App extends PureComponent {
 
       if (this.dicomViewersRefs[this.props.activeDcmIndex].volume === null)
         this.dicomViewersRefs[this.props.activeDcmIndex].volume = this.volume
-      //console.log('mprCoronal, this.mprPlanePosition(): ', plane)
 
       if (plane === 'coronal') {
-        const sliceMax = this.props.files === null ? 1 : this.props.files.length
+        const sliceMax = this.dicomViewersRefs[0].files === null ? 1 : this.dicomViewersRefs[0].files.length
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})
-        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)        
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+        })       
 
       } else if (plane === 'axial') {
-        const sliceMax = this.props.files[0].image.columns
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        })
 
       } else { // plane is sagittal
-        const sliceMax = this.props.files[0].image.rows
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})  
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        })  
       }      
     })
   }
@@ -1385,50 +1376,58 @@ class App extends PureComponent {
           
       if (this.dicomViewersRefs[this.props.activeDcmIndex].volume === null)
         this.dicomViewersRefs[this.props.activeDcmIndex].volume = this.volume
-      //console.log('mprAxial, this.mprPlanePosition(): ', plane)
 
       if (plane === 'axial') {
-        const sliceMax = this.props.files === null ? 1 : this.props.files.length
+        const sliceMax = this.dicomViewersRefs[0].files === null ? 1 : this.dicomViewersRefs[0].files.length
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})
-        this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
+        })
+        
 
       } else if (plane === 'sagittal') {
-        const sliceMax = this.props.files[0].image.columns
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        })
+        
 
       } else {
-        const sliceMax = this.props.files[0].image.rows
+        const sliceMax = this.mprData.zDim 
         const index = Math.round(sliceMax / 2)
-        this.setState({sliceIndex: index, sliceMax: sliceMax})             
-        this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        this.setState({sliceIndex: index, sliceMax: sliceMax}, () => {
+          this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax = sliceMax
+          this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData)
+        })             
       }      
     })
   }
 
   mprPlanePosition = (force = false, index = this.props.activeDcmIndex) => {
     //console.log('App - mprPlanePosition 1: ', this.mprPlane)
-    //console.log('App - this.props.activeDcmIndex: ', index)
     if (this.mprPlane === '' || force) {
       this.mprPlane = this.dicomViewersRefs[index].mprPlanePosition()
+      if (this.mprPlane === 'sagittal')
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
+      else if (this.mprPlane === 'coronal')
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: false, visibleMprCoronal: true })  
+      else 
+        this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })
     }
-    console.log('App - mprPlanePosition 2: ', this.mprPlane)
-    if (this.mprPlane === 'sagittal')
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprAxial: false, visibleMprCoronal: false})
-    else if (this.mprPlane === 'coronal')
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: false, visibleMprCoronal: true })  
-    else 
-      this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })
     return this.mprPlane  
   }
 
   mprOrthogonal = () => {
     const visibleMprOrthogonal = this.state.visibleMprOrthogonal
     if (!visibleMprOrthogonal) {
-      const index = Math.round(this.props.files.length / 2)
-      //console.log('mprOrthogonal, index: ', index)
+      const index = Math.round(this.dicomViewersRefs[0].files.length / 2)
+      this.mprData.plane = {
+        from: this.mprPlane,
+        to: 'orthogonal'
+      }
       this.setState({sliceIndex: index})
       this.setState({visibleMprOrthogonal: true, 
                     visibleMprCoronal: false, 
@@ -1450,6 +1449,10 @@ class App extends PureComponent {
   mprSagittal = () => {
     const visibleMprSagittal = this.state.visibleMprSagittal
     if (!visibleMprSagittal) {
+      this.mprData.plane = {
+        from: this.mprPlane,
+        to: 'sagittal'
+      }
       this.setState({visibleMprOrthogonal: false, 
                     visibleMprSagittal: true, 
                     visibleMprCoronal: false, 
@@ -1470,6 +1473,10 @@ class App extends PureComponent {
   mprCoronal = () => {
     const visibleMprCoronal = this.state.visibleMprCoronal
     if (!visibleMprCoronal) {
+      this.mprData.plane = {
+        from: this.mprPlane,
+        to: 'coronal'
+      }
       this.setState({visibleMprOrthogonal: false, 
                      visibleMprSagittal: false, 
                      visibleMprCoronal: true, 
@@ -1490,6 +1497,10 @@ class App extends PureComponent {
   mprAxial = () => {
     const visibleMprAxial = this.state.visibleMprAxial
     if (!visibleMprAxial) {
+      this.mprData.plane = {
+        from: this.mprPlane,
+        to: 'axial'
+      }
       this.setState({visibleMprOrthogonal: false, 
                      visibleMprSagittal: false, 
                      visibleMprCoronal: false, 
@@ -1557,7 +1568,6 @@ class App extends PureComponent {
   }
 
   handleSliceChange = (event, value) => {
-    //console.log('slice value: ', Math.floor(value))
     this.setState({sliceIndex: Math.floor(value)}, () => {
       let index = this.state.sliceIndex
       this.props.setLocalFileStore(this.files[index])
@@ -1566,19 +1576,19 @@ class App extends PureComponent {
   }
 
   explorerOnSelectSeries = (files) => {
-    console.log('explorerOnSelectSeries: ', files)
+    //console.log('explorerOnSelectSeries: ', files)
 
     this.files = files
     this.mprPlane = ''
 
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('setfiles', this.files)
-    //this.mprPlane = this.dicomViewersRefs[this.props.activeDcmIndex].mprPlanePosition()
-    
+
     const sliceMax = this.dicomViewersRefs[this.props.activeDcmIndex].sliceMax // this.files.length
     const sliceIndex = this.dicomViewersRefs[this.props.activeDcmIndex].sliceIndex
     this.setState({sliceMax: sliceMax, sliceIndex: sliceIndex})
     
-    console.log('explorerOnSelectSeries - this.mprPlane: ', this.mprPlane)
+    this.mprData = {}
+    this.mprPlane = ''
 
     this.handleOpenImage(0)
   }
@@ -1593,15 +1603,16 @@ class App extends PureComponent {
     
     const isOpen = this.props.isOpen[this.props.activeDcmIndex]
     const isDicomdir = this.props.dicomdir !== null
-    //const isMultipleFiles = this.files === null ? false : this.files.length > 1
     let isMultipleFiles = false
-    
     if (this.dicomViewersRefs[this.props.activeDcmIndex] === undefined) {
       isMultipleFiles = false
     } else {
-      isMultipleFiles = this.dicomViewersRefs[this.props.activeDcmIndex].files === null ? false : this.dicomViewersRefs[this.props.activeDcmIndex].files.length > 1
+      if (this.dicomViewersRefs[this.props.activeDcmIndex].files !== null) 
+        isMultipleFiles = this.dicomViewersRefs[this.props.activeDcmIndex].files.length > 1
+      else
+        isMultipleFiles = false
     }
-    
+
     const openMenu = this.state.openMenu
     const openImageEdit = this.state.openImageEdit
     const openTools = this.state.openTools
@@ -1631,10 +1642,6 @@ class App extends PureComponent {
     const dcmViewer = this.getActiveDcmViewer()
 
     const sliceMax = this.state.sliceMax
-
-    //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
-    //console.log('isMultipleFiles: ', isMultipleFiles)    
-    //console.log('this.mprPlane: ', this.mprPlane) 
 
     return (
       <div>
@@ -1714,7 +1721,7 @@ class App extends PureComponent {
               </Tooltip>
               ) : null
             }    
-            { isOpen ? (
+            { isOpen && isMultipleFiles ? (
               <Tooltip title="Explorer">
                 <IconButton color="inherit" onClick={this.toggleExplorer}>
                   <Icon path={mdiAnimationOutline} size={iconSize} color={iconColor} />

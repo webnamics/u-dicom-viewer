@@ -329,8 +329,6 @@ class DicomViewer extends React.Component {
           this.setState({frame: frame})
         }
       }
-
-      this.props.onLoadedImage()
     }
 
     onMeasurementModified = (e) => {
@@ -407,10 +405,12 @@ class DicomViewer extends React.Component {
     }*/
 
     displayImageFromFiles = (index) => {
-      console.log('displayImageFromFiles: ', index)
-      console.log('displayImageFromFiles - this.files: ', this.files)
+      //console.log('displayImageFromFiles: ', index)
+      //console.log('displayImageFromFiles - use: ', this.props.use)
 
       const files = this.files === null ? this.props.files : this.files
+
+      //console.log('displayImageFromFiles - this.files: ', this.files)
 
       const image = files[index].image
       const imageId = files[index].imageId
@@ -462,9 +462,11 @@ class DicomViewer extends React.Component {
         cornerstone.updateImage(element)
         cornerstoneTools.setToolEnabled(measure.tool)
       }).then(() => {
-        this.props.setActiveMeasurements(this.measurements)
-        this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom})   
-        this.props.setIsOpenStore({index: this.props.index, value: true})        
+        if (this.props.use === 'normal') {
+          this.props.setActiveMeasurements(this.measurements)
+          this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom})             
+          this.props.setIsOpenStore({index: this.props.index, value: true})  
+        }   
       })   
       
       //this.overlayImage()
@@ -610,7 +612,7 @@ class DicomViewer extends React.Component {
           imageId = cornerstoneFileImageLoader.fileManager.add(localfile)
         }
         cornerstone.loadImage(imageId).then(image => {
-          //console.log('loadImage, image from local: ', image)
+          console.log('loadImage, image from local: ', image)
 
           this.image = image
           this.isDicom = false
@@ -675,10 +677,6 @@ class DicomViewer extends React.Component {
           //cornerstoneTools.mouseWheelInput.enable(element);
 
           this.enableTool()
-
-          /*const viewport = cornerstone.getViewport(this.dicomImage)
-          const lut =  cornerstone.generateLut(this.image, viewport.voi.windowWidth, viewport.voi.windowCenter, viewport.invert, viewport.modalityLUT, viewport.voiLUT)
-          console.log('lut: ', lut)*/
 
           if (this.numberOfFrames > 1) {
             cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);    
@@ -799,6 +797,8 @@ class DicomViewer extends React.Component {
           this.setState({ visibleCinePlayer: false })
           this.mprPlane = ''
           //this.props.clearingStore()
+          this.files = null
+          this.props.setIsOpenStore({index: this.props.index, value: false}) 
           cornerstone.disable(this.dicomImage)
           break
         }  
@@ -1200,8 +1200,10 @@ class DicomViewer extends React.Component {
     mprPlanePosition = () => {
       try {
         if (!this.isDicom) return this.mprPlane
+        //console.log('DicomViewer - mprPlanePosition - files: ', this.files)
         //console.log('DicomViewer - mprPlanePosition - image: ', this.image)
-        const imageOrientation = this.image.data.string('x00200037').split('\\')
+        const image = this.files[0].image
+        const imageOrientation = image.data.string('x00200037').split('\\')
         let v = new Array(6).fill(0)
         v[0] = parseFloat(imageOrientation[0]) // the x direction cosines of the first row X
         v[1] = parseFloat(imageOrientation[1]) // the y direction cosines of the first row X
@@ -1235,6 +1237,8 @@ class DicomViewer extends React.Component {
       
       const files = this.files === null ? this.props.files : this.files
 
+      this.sliceIndex = x
+      
       this.filename = filename
       cornerstone.disable(this.dicomImage)
       //console.log(`mprRenderYZPlane, origin: ${origin}, x: ${x}`)
@@ -1290,6 +1294,8 @@ class DicomViewer extends React.Component {
       if (this.volume === null) return
 
       const files = this.files === null ? this.props.files : this.files
+
+      this.sliceIndex = y
 
       this.filename = filename
       cornerstone.disable(this.dicomImage)

@@ -106,9 +106,9 @@ class Explorer extends PureComponent {
     }
 
     buildPreviewStack = (rows) => {
-        let dicomviewers = []
+        this.dicomviewers = []
         for(let i=0; i < rows; i++) {
-            dicomviewers.push(
+            this.dicomviewers.push(
               <div 
                 key={i} 
                 onClick={() => this.previewStackClick(i)} 
@@ -130,7 +130,7 @@ class Explorer extends PureComponent {
               width: '100%',
             }}
           >
-            {dicomviewers}
+            {this.dicomviewers}
           </div>
         )
     }
@@ -182,7 +182,8 @@ class Explorer extends PureComponent {
                 //this.files = this.series.seriesList.get(this.state.series[0])
 
                 //this.props.setFilesStore(this.files)
-                this.props.onSelectSeries(this.seriesList.get(seriesKeys[0]))
+                //this.props.onSelectSeries(this.seriesList.get(seriesKeys[0]))
+                this.previewStackClick(0)
             })
 
             //this.props.setExplorerActiveSeriesIndex(0) 
@@ -193,9 +194,7 @@ class Explorer extends PureComponent {
 
     componentDidUpdate() {
         //console.log('Explorer - componentDidUpdate: ', this.state.series)
-
         for(let i=0; i < this.state.series.length; i++) {
-            console.log('Explorer - componentDidUpdate: ', this.seriesList.get(this.state.series[i]))
             this.dicomViewersRefs[i].runTool('setfiles', this.seriesList.get(this.state.series[i]))
             this.dicomViewersRefs[i].runTool('openimage', 0)
         }
@@ -256,7 +255,11 @@ class Explorer extends PureComponent {
             //this.props.setFilesStore(this.series.seriesList.get(this.state.series[0]))
 
             //console.log('handlePatientChange - handlePatientChange: ')
-            this.props.onSelectSeries(this.series.seriesList.get(this.state.series[0]))
+            //this.props.onSelectSeries(this.series.seriesList.get(seriesKeys[0]))
+            this.previewStackClick(0)
+            //console.log('this.dicomviewers: ', this.dicomviewers[0].props.onClick())
+            //this.dicomviewers[0].onClick()
+            //this.dicomviewers[0].props.onClick()
         })
     }
 
@@ -305,8 +308,9 @@ class Explorer extends PureComponent {
             //}
             //this.props.setFilesStore(this.files) 
             //this.props.onSelectSeries(this.files) 
-            this.props.setExplorerActiveStudyIndex(studyIndex)
-            this.props.onSelectSeries(this.series.seriesList.get(this.state.series[0]))  
+            //this.props.setExplorerActiveStudyIndex(studyIndex)
+            //this.props.onSelectSeries(this.series.seriesList.get(seriesKeys[0]))  
+            this.previewStackClick(0)
         })
 
 
@@ -315,7 +319,7 @@ class Explorer extends PureComponent {
     previewStackClick = (index) => {
         //console.log('previewStackClick: ', index)
         //console.log('previewStackClick - this.state.seriesActiveIndex: ', this.state.seriesActiveIndex)
-        if (index === this.state.seriesActiveIndex) return
+        //if (index === this.state.seriesActiveIndex) return
         this.props.setExplorerActiveSeriesIndex(index) 
         this.setState({seriesActiveIndex: index}, () => {
             this.props.onSelectSeries(this.series.seriesList.get(this.state.series[index]))
@@ -323,7 +327,7 @@ class Explorer extends PureComponent {
     }
 
     previewStackTouch = (index) => {
-        if (index === this.state.seriesActiveIndex) return
+        //if (index === this.state.seriesActiveIndex) return
         this.props.setExplorerActiveSeriesIndex(index)
         this.setState({seriesActiveIndex: index}, () => {
             this.props.onSelectSeries(this.series.seriesList.get(this.state.series[index]))
