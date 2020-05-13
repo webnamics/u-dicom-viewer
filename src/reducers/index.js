@@ -2,7 +2,7 @@ import {
   CLEAR_STORE, 
   LOCALFILE_STORE,
   FSFILE_STORE,
-  ALLFILES_STORE,
+  //ALLFILES_STORE,
   FILES_STORE,
   SERIES_STORE,
   DCM_IS_OPEN, 
@@ -31,7 +31,7 @@ export default function storeReducer(state={}, action) {
         return {
           localFile: state.localFile,
           fsFile: state.fsFile,
-          allfiles: null,
+          //allfiles: null,
           files: null, 
           series: null,
           isOpen: state.isOpen.map((el, i) => i === state.activeDcmIndex ? false : el),
@@ -66,13 +66,13 @@ export default function storeReducer(state={}, action) {
             localFile: null,     
             fsFile: action.fsFile,   
           }
-
+/*
       case ALLFILES_STORE:
           return {
             ...state,
             allFiles: action.allFiles,  
           } 
-
+*/
       case FILES_STORE:
           return {
             ...state,

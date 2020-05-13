@@ -124,6 +124,8 @@ import {
 
 import './App.css'
 
+import * as cornerstoneTools from "cornerstone-tools"
+
 log()
 
 //localStorage.setItem("debug", "cornerstoneTools")
@@ -234,6 +236,7 @@ class App extends PureComponent {
     
     this.volume = []
     //this.mprSliceIndex = [0, 0, 0]
+    this.renderedImages = []
 
     this.fileOpen = React.createRef()
     this.showFileOpen = this.showFileOpen.bind(this)
@@ -301,6 +304,7 @@ class App extends PureComponent {
         runTool={ref => (this.runTool = ref)} 
         changeTool={ref => (this.changeTool = ref)}
         onLoadedImage={this.onLoadedImage}
+        onRenderedImage={this.onRenderedImage}
         overlay={true}
         visible={true}
         use='normal'
@@ -322,6 +326,28 @@ class App extends PureComponent {
       else 
         this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprAxial: true, visibleMprCoronal: false })
     }*/
+  }
+
+  onRenderedImage = (index) => {
+    /*
+    if (index < 0) return
+    console.log('App - onRenderedImage: ', index)
+    console.log('App - onRenderedImage, this.renderedImages[index]: ', this.renderedImages)
+    if (this.renderedImages.length >= 2) return
+    this.renderedImages[index] = true
+    let elements = []
+    console.log('App - onRenderedImage, this.props.isOpen: ', this.props.isOpen)
+    for(let i=0; i < 16; i++) {
+      if (this.renderedImages[i] && this.dicomViewersRefs[i] !== undefined) {
+        console.log('i: ', i)
+        console.log('App - dicomImage: ', this.dicomViewersRefs[i].dicomImage)
+        elements.push(this.dicomViewersRefs[i].dicomImage)
+      }
+    }
+    if (elements.length >= 2) {
+      this.addReferenceLinesTool(elements)
+    }
+    */
   }
 
   getDcmViewerRef = (index) => {
@@ -1054,8 +1080,35 @@ class App extends PureComponent {
     }
   }
 
-  // ---------------------------------------------------------------------------------------------- MPR
+
+  // ---------------------------------------------------------------------------------------------- REFERENCE LINES
+  // #region REFERENCE LINES
+
+  addReferenceLinesTool = (elements) => {
+    //console.log('App - addReferenceLinesTool: ', elements)
+    if (elements.length < 2) return
+
+    const synchronizer = new cornerstoneTools.Synchronizer(
+      'cornerstonenewimage',
+      cornerstoneTools.updateImageSynchronizer
+    )
   
+    // These have to be added to our synchronizer before we pass it to our tool
+    for(let i=0; i < elements.length; i++) {
+      synchronizer.add(elements[i])
+    }
+  
+    cornerstoneTools.addTool(cornerstoneTools.ReferenceLinesTool)
+    cornerstoneTools.setToolEnabled('ReferenceLines', {
+      synchronizationContext: synchronizer,
+    })
+  }
+
+  // #endregion 
+  
+  // ---------------------------------------------------------------------------------------------- MPR
+  // #region MPR
+
   getImageOrientationZ = (image) => {
     const iop = image.data.string('x00200037').split('\\') // Image Orientation Patient
 
@@ -1518,7 +1571,7 @@ class App extends PureComponent {
     }
   }
 
-  // ---------------------------------------------------------------------------------------------- MPR end
+  // #endregion 
   
   listOpenFilesFirstFrame = () => {
     const index = 0

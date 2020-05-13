@@ -9,7 +9,7 @@ import LinearProgress from '@material-ui/core/LinearProgress'
 import * as cornerstone from "cornerstone-core"
 import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader"
 import {
-  allFilesStore,
+  //allFilesStore,
   filesStore,
 } from '../actions'
 import { 
@@ -56,7 +56,7 @@ class OpenMultipleFilesDlg extends PureComponent {
     for (let i=0; i<this.props.files.length; i++) {
       const file = this.props.files[i]
       if (this.state.cancel) {
-        this.props.setAllFilesStore(null)
+        //this.props.setAllFilesStore(null)
         this.props.setFilesStore(null)
         this.close()
         return
@@ -163,7 +163,7 @@ class OpenMultipleFilesDlg extends PureComponent {
           })
           this.t1 = performance.now()
           console.log(`performance load image: ${this.t1-this.t0} milliseconds`)
-          this.props.setAllFilesStore(this.items)
+          //this.props.setAllFilesStore(this.items)
           this.props.setFilesStore(this.items)
           this.close()
         }
@@ -212,7 +212,7 @@ class OpenMultipleFilesDlg extends PureComponent {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-      setAllFilesStore: (files) => dispatch(allFilesStore(files)),
+      //setAllFilesStore: (files) => dispatch(allFilesStore(files)),
       setFilesStore: (files) => dispatch(filesStore(files)),
   }
 }

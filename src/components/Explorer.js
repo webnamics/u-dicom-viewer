@@ -85,6 +85,7 @@ class Explorer extends PureComponent {
                 runTool={ref => (this.runTool = ref)} 
                 changeTool={ref => (this.changeTool = ref)}
                 onLoadedImage={this.onLoadedImage}
+                onRenderedImage={this.onRenderedImage}
                 overlay={true}
                 visible={true} 
                 use='preview'
@@ -94,7 +95,11 @@ class Explorer extends PureComponent {
     }
     
     onLoadedImage = () => {
-        //console.log('Explorer - onLoadedImage: ')
+    
+    }
+
+    onRenderedImage = () => {
+
     }
 
     getDcmViewerRef = (index) => {
@@ -143,7 +148,7 @@ class Explorer extends PureComponent {
         const patientName = this.props.explorer.patient.keys[patientIndex]
         
         this.setState({patientName: patientName}, () => {
-            this.filesListForPatient = this.props.allFiles.filter((a) => {
+            this.filesListForPatient = this.props.files.filter((a) => {
                 return a.patient.patientName === patientName}
             )
             //console.log('filesListForPatient: ', this.filesListForPatient)
@@ -388,7 +393,7 @@ class Explorer extends PureComponent {
 
 const mapStateToProps = (state) => {
     return {
-      allFiles: state.allFiles,
+      files: state.files,
       explorerActivePatientIndex: state.explorerActivePatientIndex,
       explorerActiveStudyIndex: state.explorerActiveStudyIndex,
       explorerActiveSeriesIndex: state.explorerActiveSeriesIndex,

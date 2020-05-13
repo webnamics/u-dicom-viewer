@@ -1,7 +1,7 @@
 export const CLEAR_STORE = 'CLEAR_STORE'
 export const LOCALFILE_STORE = 'LOCALFILE_STORE'
 export const FSFILE_STORE = 'LOCALFILE_STORE'
-export const ALLFILES_STORE = 'ALLFILES_STORE'
+//export const ALLFILES_STORE = 'ALLFILES_STORE'
 export const FILES_STORE = 'FILES_STORE'
 export const SERIES_STORE = 'SERIES_STORE'
 export const DCM_IS_OPEN = 'DCM_IS_OPEN'
@@ -40,14 +40,14 @@ export const fsFileStore = (file) => {
         fsFile: file
     }
 }
-
+/*
 export const allFilesStore = (files) => {
     return { 
         type: ALLFILES_STORE, 
         allFiles: files
     }
 }
-
+*/
 export const filesStore = (files) => {
     return { 
         type: FILES_STORE, 

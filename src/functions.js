@@ -16,6 +16,7 @@ import {
 } from './constants/settings'
 
 // ---------------------------------------------------------------------------------------------- DICOM
+//#region DICOM
 
 export function getDicomPatientName(image) {
     const value = image.data.string('x00100010')
@@ -154,6 +155,11 @@ export function getDicomColumns(image) {
     return value    
 } 
 
+export function isLocalizer(image) {
+    const values = image.data.string('x00080008').split('\\')
+    return values.length === 3 && values[2] === 'LOCALIZER'
+}
+
 // see https://stackoverflow.com/questions/37730772/get-distance-between-slices-in-dicom
 //
 export function getDicomSliceDistance(image) {
@@ -212,8 +218,7 @@ export function dicomDateTimeToLocale(dateTime) {
     return `${localeDate} - ${time}`
 }
 
-// ---------------------------------------------------------------------------------------------- DICOM
-  
+//#endregion  
 
 export function groupBy(list, keyGetter) {
     const map = new Map()
@@ -327,6 +332,7 @@ export function formatBytes(bytes, decimals = 2) {
 
 
 // ---------------------------------------------------------------------------------------------- SETTINGS 
+//#region  SETTINGS
 
 export function getSettingsSaveAs() {
     let saveAs = localStorage.getItem(SETTINGS_SAVEAS)
@@ -432,8 +438,7 @@ export function setSettingsMprInterpolation(value) {
     localStorage.setItem(SETTINGS_MPRINTERPOLATION, value)  
 }
 
-// ---------------------------------------------------------------------------------------------- SETTINGS 
-
+//#endregion
 
 /**
  * Converts a value to a string appropriate for entry into a CSV table.  E.g., a string value will be surrounded by quotes.

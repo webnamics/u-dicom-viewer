@@ -4,7 +4,7 @@ import storeReducer from '../reducers/index'
 let initialState = {
     localFile: null,
     fsFile: null,
-    allFiles: null,
+    //allFiles: null,
     files: null,
     series: null,
     isOpen: new Array(16).fill(false),

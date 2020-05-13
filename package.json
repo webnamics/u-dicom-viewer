@@ -1,6 +1,6 @@
 {
   "name": "u-dicom-viewer",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "private": true,
   "homepage": "https://webnamics.github.io/u-dicom-viewer/",
   "dependencies": {

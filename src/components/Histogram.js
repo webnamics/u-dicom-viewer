@@ -156,6 +156,7 @@ class Histogram extends PureComponent {
     }
 
     updateCanvas() {
+      if (this.props.activeDcm === null) return
       const image = this.props.activeDcm.image
       if (image === null) return
       //const element = this.props.element
