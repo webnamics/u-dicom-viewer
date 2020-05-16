@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "aa0933f45eec7a526f818a91c7917fa1",
+    "revision": "5669425debe4c75c106f698fde98809f",
     "url": "/u-dicom-viewer/index.html"
   },
   {
@@ -8,7 +8,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/u-dicom-viewer/static/css/2.18fb2ca0.chunk.css"
   },
   {
-    "revision": "cca1037a40164dbf5ade",
+    "revision": "5daf35fb2846785c4e32",
     "url": "/u-dicom-viewer/static/css/main.5b250232.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/u-dicom-viewer/static/js/2.b89f67e5.chunk.js"
   },
   {
-    "revision": "cca1037a40164dbf5ade",
-    "url": "/u-dicom-viewer/static/js/main.e717d9af.chunk.js"
+    "revision": "5daf35fb2846785c4e32",
+    "url": "/u-dicom-viewer/static/js/main.556eb7d9.chunk.js"
   },
   {
     "revision": "47a51e2081b6eae16985",
