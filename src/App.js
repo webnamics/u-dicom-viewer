@@ -1687,7 +1687,8 @@ class App extends PureComponent {
   //#endregion EXPLORER
 
   getActiveDcmViewers = () => {
-    this.dicomViewersActive = this.dicomViewersRefs.filter(v => v.image !== null)
+    console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
+    this.dicomViewersActive = this.dicomViewersRefs.filter(v => v !== undefined && v.image !== null)
     //console.log('this.dicomViewersActive: ', this.dicomViewersActive)
     return this.dicomViewersActive.length
   }  
@@ -2001,7 +2002,7 @@ class App extends PureComponent {
                       }
                     />
                   </ListItem>  
-                  {/*     
+                  {/*    
                   <ListItem button style={{paddingLeft: 30}} onClick={() => this.toolExecute('referencelines')} disabled={!isMultipleView}>
                     <ListItemIcon><Icon path={mdiArrowSplitHorizontal} size={iconSizeSmall} color={iconColor} /></ListItemIcon>
                     <ListItemText classes={primaryClass}
@@ -2009,8 +2010,8 @@ class App extends PureComponent {
                         <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-23px'}}>Reference Lines</Typography>
                       }
                     />
-                  </ListItem>  
-                  */}    
+                  </ListItem> 
+                  */}                   
                   <ListItem button style={{paddingLeft: 30}} onClick={() => this.toolExecute('Wwwc')} disabled={!isOpen}>
                     <ListItemIcon><Icon path={mdiArrowAll} size={iconSize} color={iconColor} /></ListItemIcon>
                     <ListItemText classes={primaryClass}
