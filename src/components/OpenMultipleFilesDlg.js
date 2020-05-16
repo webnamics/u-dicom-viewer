@@ -162,7 +162,7 @@ class OpenMultipleFilesDlg extends PureComponent {
             // return l.sliceLocation - r.sliceLocation
           })
           this.t1 = performance.now()
-          console.log(`performance load image: ${this.t1-this.t0} milliseconds`)
+          console.log(`performance load ${this.count} images in ${this.t1-this.t0} milliseconds`)
           //this.props.setAllFilesStore(this.items)
           this.props.setFilesStore(this.items)
           this.close()

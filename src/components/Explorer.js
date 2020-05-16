@@ -327,7 +327,7 @@ class Explorer extends PureComponent {
         //if (index === this.state.seriesActiveIndex) return
         this.props.setExplorerActiveSeriesIndex(index) 
         this.setState({seriesActiveIndex: index}, () => {
-            this.props.onSelectSeries(this.series.seriesList.get(this.state.series[index]))
+            this.props.onSelectSeries(this.series.seriesList.get(this.state.series[index]), index)
         })
     }
 

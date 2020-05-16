@@ -157,6 +157,7 @@ export function getDicomColumns(image) {
 
 export function isLocalizer(image) {
     const values = image.data.string('x00080008').split('\\')
+    console.log('Localizer: ', values)
     return values.length === 3 && values[2] === 'LOCALIZER'
 }
 

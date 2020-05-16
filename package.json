@@ -1,6 +1,6 @@
 {
   "name": "u-dicom-viewer",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "private": true,
   "homepage": "https://webnamics.github.io/u-dicom-viewer/",
   "dependencies": {
@@ -28,6 +28,7 @@
     "lodash": "^4.17.15",
     "lodash.template": "^4.5.0",
     "material-table": "^1.55.0",
+    "mathjs": "^7.0.0",
     "react": "^16.9.0",
     "react-device-detect": "^1.7.5",
     "react-dom": "^16.9.0",

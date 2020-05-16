@@ -17,6 +17,7 @@ import * as cornerstoneWebImageLoader from "cornerstone-web-image-loader"
 import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader"
 import * as dicomParser from 'dicom-parser'
 import * as blobUtil from 'blob-util'
+import * as math from 'mathjs'
 import {uids} from '../constants/uids'
 import { SETTINGS_SAVEAS } from '../constants/settings'
 import OpenUrlDlg from './OpenUrlDlg'
@@ -45,6 +46,7 @@ import {
   isUrlImage,
   getSettingsSaveInto
 } from '../functions'
+//import { parse } from "@babel/core"
 
 const scrollToIndex = csTools('util/scrollToIndex')
 
@@ -109,9 +111,11 @@ class DicomViewer extends React.Component {
       this.localurl = null
       this.fsItem = null
       this.dicomImage = null
+      this.explorerIndex = 0
       this.imageId = null
       this.image = null
       this.isDicom = false
+      this.layoutIndex = 0
       this.numberOfFrames = 1
       this.measurements = []
       this.xSize = 0
@@ -122,6 +126,7 @@ class DicomViewer extends React.Component {
       this.mprPlane = ''
       this.sliceMax = 0
       this.sliceIndex = 0
+      this.referenceLines = {}
     }
 
     state = {
@@ -144,6 +149,7 @@ class DicomViewer extends React.Component {
       dcmRef(this)          
       this.useIsPreview = this.props.use ===  'preview'
       this.useIsNormal = this.props.use ===  'normal'
+      this.layoutIndex = this.props.index
     }
 
     componentWillUnmount() {
@@ -427,6 +433,8 @@ class DicomViewer extends React.Component {
       const image = files[index].image
       const imageId = files[index].imageId
       this.filename = files[index].name
+
+      //console.log('displayImageFromFiles - image: ', image)
 
       const element = this.dicomImage
       element.addEventListener("cornerstonenewimage", this.onNewImage)
@@ -1265,6 +1273,7 @@ class DicomViewer extends React.Component {
       this.xSize = files[0].columns
       this.ySize = files[0].rows 
       this.zSize = mprData.zDim
+      //this.sliceMax = this.xSize
 
       const i = Math.round(x / this.xSize * files.length)
       this.originImage = files[i].image
@@ -1323,6 +1332,7 @@ class DicomViewer extends React.Component {
       this.xSize = files[0].columns
       this.ySize = files[0].rows
       this.zSize = mprData.zDim
+      //this.sliceMax = this.ySize
 
       const i = Math.trunc(y / this.ySize * files.length)
       this.originImage = files[i].image
@@ -1354,6 +1364,171 @@ class DicomViewer extends React.Component {
     mprIsOrthogonalView = () => {
       //console.log('mprIsOrthogonalView: ', this.mprPlane)
       return (this.mprPlane !== '' && this.props.layout[0] === 1 && this.props.layout[1] === 3)
+    }
+
+    //#endregion
+
+
+    // -------------------------------------------------------------------------------------------- REFERENCE LINES
+    //#region REFERENCE LINES
+
+    // see https://stackoverflow.com/questions/10241062/how-to-draw-scout-reference-lines-in-dicom
+    //     http://www.dclunie.com/dicom3tools/workinprogress/dcpost.cc
+    // 
+    // the scout image is local image
+    //
+    referenceLinesPrepare = () => {
+      // Scout Image Position Patient - x, y, z of top hand corner
+      this.referenceLines.ipp = this.image.data.string('x00200032').split('\\').map(v => parseFloat(v)) 
+      // Image Orientation Patient - x, y, z of direction cosines of the first row and x, y, z of direction cosines of the first column
+      const dstIop = this.image.data.string('x00200037').split('\\').map(v => parseFloat(v)) 
+
+      const dstRows = this.image.rows
+      const dstCols = this.image.columns
+      const dstPixelSpacing = this.image.data.string('x00280030').split('\\').map(v => parseFloat(v)) 
+
+      this.referenceLines.rowSpacing = dstPixelSpacing[0]
+      this.referenceLines.colSpacing = dstPixelSpacing[1]
+      this.referenceLines.rowLength = dstRows * this.referenceLines.rowSpacing
+      this.referenceLines.colLength = dstCols * this.referenceLines.colSpacing
+
+      this.referenceLines.rowDircosX = dstIop[0]
+      this.referenceLines.rowDircosY = dstIop[1]
+      this.referenceLines.rowDircosZ = dstIop[2]
+
+      this.referenceLines.colDircosX = dstIop[3]
+      this.referenceLines.colDircosY = dstIop[4]
+      this.referenceLines.colDircosZ = dstIop[5]      
+
+      this.referenceLines.nrmDircosX = this.referenceLines.rowDircosY * this.referenceLines.colDircosZ 
+                                     - this.referenceLines.rowDircosZ * this.referenceLines.dstColDircosY
+      this.referenceLines.nrmDircosY = this.referenceLines.rowDircosZ * this.referenceLines.colDircosX 
+                                     - this.referenceLines.rowDircosX * this.referenceLines.colDircosZ
+      this.referenceLines.nrmDircosZ = this.referenceLines.rowDircosX * this.referenceLines.colDircosY 
+                                     - this.referenceLines.rowDircosY * this.referenceLines.colDircosX
+
+      console.log('referenceLines: ', this.referenceLines)
+          
+    }
+
+    referenceLinesBuildSquare = (srcImage) => {
+      // Source Image Position Patient - x, y, z of top hand corner 
+      const srcIpp = srcImage.data.string('x00200032').split('\\').map(v => parseFloat(v)) 
+      // Source Image Orientation Patient - x, y, z of direction cosines of the first row and x, y, z of direction cosines of the first column
+      const srcIop = srcImage.data.string('x00200037').split('\\').map(v => parseFloat(v)) 
+
+      const srcRows = srcImage.rows
+      const srcCols = srcImage.columns
+      const srcPixelSpacing = srcImage.data.string('x00280030').split('\\').map(v => parseFloat(v)) 
+      const srcRowSpacing = srcPixelSpacing[0]
+      const srcColSpacing = srcPixelSpacing[1]
+      const srcRowLength = srcRows * srcRowSpacing
+      const srcColLength = srcCols * srcColSpacing      
+
+      const srcRowDircosX = srcIop[0]
+      const srcRowDircosY = srcIop[1]
+      const srcRowDircosZ = srcIop[2]
+
+      const srcColDircosX = srcIop[3]
+      const srcColDircosY = srcIop[4]
+      const srcColDircosZ = srcIop[5]     
+      /* never used
+      const nrmDircosX = srcRowDircosY * srcColDircosZ 
+                       - srcRowDircosZ * srcColDircosY
+      const nrmDircosY = srcRowDircosZ * srcColDircosX 
+                       - srcRowDircosX * srcColDircosZ
+      const nrmDircosZ = srcRowDircosX * srcColDircosY 
+                       - srcRowDircosY * srcColDircosX
+      */
+      const srcPosX = srcIpp[0]
+      const srcPosY = srcIpp[1]
+      const srcPosZ = srcIpp[2] 
+
+      // Build a square to project with 4 corners TLHC, TRHC, BRHC, BLHC ...
+
+      let posX = new Array(4).fill(0)
+      let posY = new Array(4).fill(0)
+      let posZ = new Array(4).fill(0)
+
+      // TLHC is what is in ImagePositionPatient
+
+      posX[0] = srcPosX
+      posY[0] = srcPosY
+      posZ[0] = srcPosZ
+          
+      // TRHC
+
+      posX[1] = srcPosX + srcRowDircosX * srcRowLength
+      posY[1] = srcPosY + srcRowDircosY * srcRowLength
+      posZ[1] = srcPosZ + srcRowDircosZ * srcRowLength
+
+		  // BRHC
+
+      posX[2] = srcPosX + srcRowDircosX * srcRowLength + srcColDircosX * srcColLength
+      posY[2] = srcPosY + srcRowDircosY * srcRowLength + srcColDircosY * srcColLength
+      posZ[2] = srcPosZ + srcRowDircosZ * srcRowLength + srcColDircosZ * srcColLength
+
+      // BLHC
+
+      posX[3] = srcPosX + srcColDircosX * srcColLength
+      posY[3] = srcPosY + srcColDircosY * srcColLength
+      posZ[3] = srcPosZ + srcColDircosZ * srcColLength
+
+      let rowPixel = new Array(4).fill(0)
+      let colPixel = new Array(4).fill(0)
+
+      for (let i=0; i < 4; ++i) {
+        console.log('referenceLinesBuildSquare - i: ', i)
+
+        // we want to view the source slice from the "point of view" of
+        // the target localizer, i.e. a parallel projection of the source
+        // onto the target
+
+        // do this by imaging that the target localizer is a view port
+        // into a relocated and rotated co-ordinate space, where the
+        // viewport has a row vector of +X, col vector of +Y and normal +Z,
+        // then the X and Y values of the projected target correspond to
+        // row and col offsets in mm from the TLHC of the localizer image !
+
+        // move everything to origin of target
+      
+        posX[i] -= this.referenceLines.ipp[0]
+        posY[i] -= this.referenceLines.ipp[0]
+        posZ[i] -= this.referenceLines.ipp[0]
+
+        // The rotation is easy ... just rotate by the row, col and normal vectors ...
+      
+        const dstPosX = this.referenceLines.rowDircosX * posX[i]
+                      + this.referenceLines.rowDircosY * posY[i]
+                      + this.referenceLines.rowDircosZ * posZ[i]
+  
+        const dstPosY = this.referenceLines.colDircosX * posX[i] 
+                      + this.referenceLines.colDircosY * posY[i] 
+                      + this.referenceLines.colDircosZ * posZ[i]
+        /* never used
+        const dstPosZ = this.referenceLines.nrmDircosX * posX[i] 
+                      + this.referenceLines.nrmDircosY * posY[i] 
+                      + this.referenceLines.nrmDircosZ * posZ[i]      
+        */
+
+        // DICOM coordinates are center of pixel 1\1
+
+			  colPixel[i] = Math.trunc(dstPosX / this.referenceLines.colSpacing + 0.5)
+			  rowPixel[i] = Math.trunc(dstPosY / this.referenceLines.rowSpacing + 0.5)
+
+        console.log('referenceLinesBuildSquare - colPixel: ', colPixel)
+        console.log('referenceLinesBuildSquare - rowPixel: ', rowPixel)
+
+        // draw the trapezoid (will repeatedly draw the same line if orthogonal) ...
+
+
+      }
+
+    }
+    
+    referenceLinesScoutPoint = (x, y, z) => {
+      if (this.referenceLinesMatrix === null) return
+      return math.multiply(this.referenceLinesMatrix, [x, y, z, 1])
     }
 
     //#endregion
