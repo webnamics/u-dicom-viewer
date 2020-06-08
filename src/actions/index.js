@@ -20,6 +20,7 @@ export const FSCURRENTLIST = 'FSCURRENTLIST'
 export const FSZIPPEDFILE = 'FSZIPPEDFILE'
 export const FSREFRESH = 'FSREFRESH'
 export const VOLUME_STORE = 'VOLUME_STORE'
+export const DCMENABLETOOL_STORE = 'DCMENABLETOOL_STORE'
 
 export const clearStore = () => {
     return { 
@@ -170,5 +171,12 @@ export const setVolume = (volume) => {
     return { 
         type: VOLUME_STORE,
         volume: volume,
+    }
+}
+
+export const setDcmEnableTool = (value) => {
+    return { 
+        type: DCMENABLETOOL_STORE,
+        dcmEnableTool: value,
     }
 }

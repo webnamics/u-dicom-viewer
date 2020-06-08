@@ -21,6 +21,7 @@ import {
   FSZIPPEDFILE,
   FSREFRESH,
   VOLUME_STORE,
+  DCMENABLETOOL_STORE,
 } from '../actions'
 
 export default function storeReducer(state={}, action) {
@@ -50,7 +51,8 @@ export default function storeReducer(state={}, action) {
           fsZippedFile: null,
           fsRefresh: state.fsRefresh,
           volume: null,
-          lut: null,
+          //lut: null,
+          dcmEnableTool: false
         }    
 
       case LOCALFILE_STORE:
@@ -204,6 +206,12 @@ export default function storeReducer(state={}, action) {
           ...state,
           volume: action.volume,        
         }      
+
+      case DCMENABLETOOL_STORE:
+        return {
+          ...state,
+          dcmEnableTool: action.dcmEnableTool,        
+        }   
 
       default:
           return state

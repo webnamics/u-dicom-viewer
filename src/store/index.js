@@ -23,6 +23,7 @@ let initialState = {
     fsZippedFile: null,
     fsRefresh: false,
     volume: null,
+    dcmEnableTool: false,
 }
 
 const store = createStore(storeReducer, initialState,

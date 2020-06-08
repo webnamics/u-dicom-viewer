@@ -27,6 +27,7 @@ import {
   getDicomSliceDistance,
   getDicomRows,
   getDicomColumns,
+  getDicomEchoNumber,
   getFileNameCorrect,
   dicomDateTimeToLocale,
 } from '../functions'
@@ -34,13 +35,6 @@ import {
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
 
 class OpenMultipleFilesDlg extends PureComponent {
-  constructor(props) {
-    super(props)
-    this.items = []
-    this.count = 0
-    this.step = 0
-    //this.slicesDistance = []
-  }
 
   state = {
     progress: 0,
@@ -48,28 +42,48 @@ class OpenMultipleFilesDlg extends PureComponent {
   }  
 
   componentDidMount() {
-    //console.log('OpenMultipleFilesDlg - componentDidMount: ', this.props.files.length)
-    this.step = this.props.files.length / 50
+    //console.log('OpenMultipleFilesDlg - componentDidMount: ', this.props.files)
+
+    this.items = []
+    this.count = 0
+    this.step = 0
+
+    const files = this.props.files
+
+    this.step = files.length / 50
     this.nextProgress = this.step
     this.t0 = performance.now()
 
-    for (let i=0; i<this.props.files.length; i++) {
-      const file = this.props.files[i]
+    //console.log('OpenMultipleFilesDlg - cachedImages: ', cornerstone.imageCache.cachedImages)
+
+    //cornerstoneWADOImageLoader.wadouri.fileManager.purge()
+    //cornerstone.imageCache.purgeCache()
+    
+    let imageIds = [] 
+
+    for (let i=0; i < files.length; i++) {
+      const file = files[i]
+      if (this.props.origin === 'local')
+        imageIds.push(cornerstoneWADOImageLoader.wadouri.fileManager.add(file))
+      else // it's fs item
+        imageIds.push(cornerstoneWADOImageLoader.wadouri.fileManager.addBuffer(file.data))
+    }
+    
+    //console.log('OpenMultipleFilesDlg - files: ', files)
+
+    for (let i=0; i < files.length; i++) {
+      const file = files[i]
       if (this.state.cancel) {
         //this.props.setAllFilesStore(null)
         this.props.setFilesStore(null)
         this.close()
         return
       }
-      let imageId = null 
       
-      if (this.props.origin === 'local')
-        imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file)
-      else // it's fs item
-        imageId = cornerstoneWADOImageLoader.wadouri.fileManager.addBuffer(file.data)  
-
-      cornerstone.loadImage(imageId).then((image) => {
-
+      //console.log('imageId', imageIds[i])
+      
+      cornerstone.loadImage(imageIds[i]).then((image) => {
+        //console.log('image', image)
         const patientName = getDicomPatientName(image)
 
         const studyId = getDicomStudyId(image)
@@ -84,6 +98,7 @@ class OpenMultipleFilesDlg extends PureComponent {
 
         const instanceNumber = getDicomInstanceNumber(image)
         const sliceDistance = getDicomSliceDistance(image)
+        const echoNumber = getDicomEchoNumber(image)
         const sliceLocation = getDicomSliceLocation(image)  
         const columns = getDicomColumns(image)       
         const rows = getDicomRows(image)
@@ -92,9 +107,8 @@ class OpenMultipleFilesDlg extends PureComponent {
 
         let item = null
         if (this.props.origin === 'local')
-          
           item = {
-            imageId: imageId, 
+            imageId: imageIds[i], 
             instanceNumber: instanceNumber, 
             name: getFileNameCorrect(file.name), 
             image: image, 
@@ -116,12 +130,13 @@ class OpenMultipleFilesDlg extends PureComponent {
               seriesDate: seriesDate,
               seriesTime: seriesTime,
               seriesDescription: seriesDescription,
-              seriesNumber: seriesNumber
+              seriesNumber: seriesNumber,
+              echoNumber: echoNumber
             }
           }
         else
           item = {
-            imageId: imageId, 
+            imageId: imageIds[i], 
             instanceNumber: instanceNumber, 
             name: file.name, 
             image: image, 
@@ -143,19 +158,20 @@ class OpenMultipleFilesDlg extends PureComponent {
               seriesDate: seriesDate,
               seriesTime: seriesTime,
               seriesDescription: seriesDescription,
-              seriesNumber: seriesNumber
+              seriesNumber: seriesNumber,
+              echoNumber: echoNumber
             }          
           }
         this.items.push(item)
         this.count++
 
-        const progress = Math.floor(this.count*(100/this.props.files.length))
+        const progress = Math.floor(this.count*(100/files.length))
         //
         if (progress > this.nextProgress) {
           this.nextProgress += this.step
           this.setState({progress: progress})
         }
-        if (this.count === this.props.files.length) {
+        if (this.count === files.length) {
           this.items.sort((l, r) => {
             return l.instanceNumber - r.instanceNumber
             // return l.sliceDistance - r.sliceDistance
@@ -163,7 +179,6 @@ class OpenMultipleFilesDlg extends PureComponent {
           })
           this.t1 = performance.now()
           console.log(`performance load ${this.count} images in ${this.t1-this.t0} milliseconds`)
-          //this.props.setAllFilesStore(this.items)
           this.props.setFilesStore(this.items)
           this.close()
         }
@@ -171,7 +186,7 @@ class OpenMultipleFilesDlg extends PureComponent {
         console.log('Error in reading multiple files: ', e)
         this.count++
       })
-      if (this.count === this.props.files.length) {
+      if (this.count === files.length) {
         
       }   
     }

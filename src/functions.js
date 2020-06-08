@@ -15,6 +15,7 @@ import {
     SETTINGS_MPRINTERPOLATION,
 } from './constants/settings'
 
+
 // ---------------------------------------------------------------------------------------------- DICOM
 //#region DICOM
 
@@ -27,6 +28,7 @@ export function getDicomPatientName(image) {
 }
 
 export function getDicomStudyId(image) {
+    if (image === null) return null
     const value = image.data.string('x00200010')
     if (value === undefined) {
         return
@@ -98,6 +100,23 @@ export function getDicomModality(image) {
     return value
 }
 
+export function getDicomIpp(image, index) {
+    const value = image.data.string('x00200032')
+    if (value === undefined) {
+        return
+    }
+    const ipp = value.split('\\')
+    return parseFloat(ipp[index])
+}
+
+export function getDicomFrameOfReferenceUID(image) {
+    const value = image.data.string('x00200052')
+    if (value === undefined) {
+        return
+    }
+    return value
+}
+
 export function getDicomPixelSpacing(image, index) {
     const value = image.data.string('x00280030')
     if (value === undefined) {
@@ -117,6 +136,14 @@ export function getDicomSpacingBetweenSlice(image) {
 
 export function getDicomSliceThickness(image) {
     const value = image.data.string('x00180050')
+    if (value === undefined) {
+        return
+    }
+    return parseFloat(value)
+}
+
+export function getDicomEchoNumber(image) {
+    const value = image.data.string('x00180086')
     if (value === undefined) {
         return
     }
@@ -184,16 +211,16 @@ export function getDicomSliceDistance(image) {
         v[1][1] = parseFloat(iop[4]) // the y direction cosines of the first column Y
         v[1][2] = parseFloat(iop[5]) // the z direction cosines of the first column Y 
 
-        //console.log("v: ", v)
-
         // calculate the slice normal from IOP
         v[2][0] = v[0][1] * v[1][2] - v[0][2] * v[1][1]
         v[2][1] = v[0][2] * v[1][0] - v[0][0] * v[1][2]
         v[2][2] = v[0][0] * v[1][1] - v[0][1] * v[1][0]
         
+        //console.log("slice normal from IOP: ", v[2])
+
         let dist = 0
         for (let i = 0; i < 3; ++i) 
-        dist += v[2][i] * topLeftCorner[i]
+            dist += v[2][i] * topLeftCorner[i]
         
         return dist
     } catch(error) {
@@ -233,8 +260,8 @@ export function groupBy(list, keyGetter) {
         }
     })
     return map
-  }
-  
+}
+
 export function objectIsEmpty(obj) {
     if (obj === null || obj === undefined || Array.isArray(obj) || typeof obj !== 'object') {
         return true

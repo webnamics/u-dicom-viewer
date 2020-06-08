@@ -1,8 +1,5 @@
 import React, { PureComponent } from 'react'
-//import Draggable from 'react-draggable'
-//import IconButton from '@material-ui/core/IconButton'
 import Slider from '@material-ui/core/Slider'
-//import HighlightOffIcon from '@material-ui/icons/HighlightOff'
 import {connect} from 'react-redux'
 //import * as cornerstone from 'cornerstone-core'
 // import { import as csTools } from 'cornerstone-tools'
@@ -62,6 +59,7 @@ class Histogram extends PureComponent {
       maxHist: 0,
       mean: 0,
       stdDev: 0,
+      indexDcm: -1
     }
 
     componentDidMount() {
@@ -80,12 +78,16 @@ class Histogram extends PureComponent {
     
     componentDidUpdate() {
       //console.log('Histogram - componentDidUpdate: ')
-      if (this.props.activeDcm === null) {
+      /*if (this.props.activeDcm === null) {
         const ctxH = this.canvasHistogram.current.getContext("2d")
         ctxH.clearRect(0, 0, ctxH.canvas.width, ctxH.canvas.height)
         return
       }
-      this.updateCanvas() 
+      this.updateCanvas() */
+      if (this.state.indexDcm !== this.props.activeDcmIndex) {
+        this.setState({indexDcm: this.props.activeDcmIndex})
+        this.updateCanvas()
+      }
     }
 
     getMousePos(canvas, evt) {
@@ -283,9 +285,9 @@ class Histogram extends PureComponent {
 
       //console.log('value: ', (m-minHist)/binSize)
       let value = Math.round((m-minHist)/binSize)
-      this.setState({value: value})
-      this.setState({valueScale: m})
-      this.setState({histCount: hist256[value]})
+      this.setState({value: value, valueScale: m, histCount: hist256[value]})
+      //this.setState({valueScale: m})
+      //this.setState({histCount: hist256[value]})
 
       // draw WindowWidth area
       ctxH.beginPath()
@@ -328,7 +330,8 @@ class Histogram extends PureComponent {
     }
         
     handleChangeValue = (event, newValue) => {
-      //console.log('newValue: ', newValue)
+      //console.log('old value: ', this.state.value)
+      //console.log('new value: ', newValue)
       //console.log('(newValue*this.binSize)+this.state.minHist: ', (newValue*this.binSize)+this.state.minHist)
       //console.log('this.hist256[newValue]: ', this.hist256[newValue])
       this.setState({value: newValue})
@@ -339,7 +342,7 @@ class Histogram extends PureComponent {
     hide = () => {
       this.props.onClose()
     }
-
+    
     onDrag = (e, ui) => {
       const {x, y} = this.state.deltaPosition;
       this.setState({
@@ -357,7 +360,7 @@ class Histogram extends PureComponent {
     onStop = () => {
       this.setState({activeDrags: this.state.activeDrags-1})
     }
-
+    
     render() {
       return (
         <div style={style}>
