@@ -220,6 +220,7 @@ class DicomViewer extends React.Component {
 
       //const viewport = cornerstone.getViewport(this.dicomImage)
       const viewport = cornerstone.getViewport(e.target)
+      this.zoom = Math.round(viewport.scale.toFixed(2)*100)
 
       document.getElementById(
         `mrtopleft-${this.props.index}`
@@ -235,7 +236,7 @@ class DicomViewer extends React.Component {
 
       document.getElementById(
         `mrbottomright-${this.props.index}`
-      ).textContent = `Zoom: ${Math.round(viewport.scale.toFixed(2)*100)}%`
+      ).textContent = `Zoom: ${this.zoom}%`
 
       document.getElementById(
         `mrtopcenter-${this.props.index}`
@@ -422,7 +423,7 @@ class DicomViewer extends React.Component {
       }).then(() => {
         //if (this.useIsNormal) {
           this.props.setActiveMeasurements(this.measurements)
-          this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom})      
+          this.props.setActiveDcm(this) // {image: this.image, element: this.dicomImage, isDicom: this.isDicom}     
           this.props.setIsOpenStore({index: this.props.index, value: true})         
         //} 
       })   
@@ -480,6 +481,7 @@ class DicomViewer extends React.Component {
       const imageId = cornerstoneFileImageLoader.fileManager.addCustom(customObj)
 
       cornerstone.loadImage(imageId).then(image => {
+        //console.log('loadImageFromCustomObject, image: ', image)
         this.image = image
         this.isDicom = true
 
@@ -488,7 +490,6 @@ class DicomViewer extends React.Component {
         //this.enableTool()
 
         this.props.setIsOpenStore({index: this.props.index, value: true})
-
       }, (e) => {
         console.log('error', e)
         this.setState({errorOnOpenImage: "This is not a valid canvas."})
@@ -522,8 +523,6 @@ class DicomViewer extends React.Component {
 
       cornerstone.enable(element)
 
-      let size = 0
-
       if (localfile === undefined && isUrlImage(url)) { // check if it's a simple image [jpeg or png] from url
         //console.log('image: ', file)
         cornerstone.loadImage(url).then(image => {
@@ -539,7 +538,7 @@ class DicomViewer extends React.Component {
           
           this.enableTool()
 
-          this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom})
+          this.props.setActiveDcm(this) // {image: this.image, element: this.dicomImage, isDicom: this.isDicom}
           this.props.isOpenStore(true)
 
         }, (e) => {
@@ -564,7 +563,7 @@ class DicomViewer extends React.Component {
           
           this.enableTool()
 
-          this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom})
+          this.props.setActiveDcm(this) // {image: this.image, element: this.dicomImage, isDicom: this.isDicom}
           //this.props.isOpenStore(true)
           this.props.setIsOpenStore({index: this.props.index, value: true})
 
@@ -574,15 +573,15 @@ class DicomViewer extends React.Component {
         })
 
       } else { // otherwise try to open as Dicom file
-
+        //let size = 0
         if (fsItem !== undefined) {
           imageId = cornerstoneWADOImageLoader.wadouri.fileManager.addBuffer(fsItem.data)
           this.filename = fsItem.name
-          size = fsItem.size
+          //size = fsItem.size
         } else if (localfile !== undefined) {
           imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(localfile)
           this.filename = localfile.name
-          size = localfile.size
+          //size = localfile.size
         } else { // it's a web dicom image
           imageId = "wadouri:"+url
         }
@@ -639,7 +638,7 @@ class DicomViewer extends React.Component {
           }).then(() => {
             //console.log('this.measurements: ', this.measurements)
             this.props.setActiveMeasurements(this.measurements)
-            this.props.setActiveDcm({name: this.filename, size: size, image: this.image, element: this.dicomImage, isDicom: this.isDicom})
+            this.props.setActiveDcm(this) // {name: this.filename, size: size, image: this.image, element: this.dicomImage, isDicom: this.isDicom}
             this.props.setIsOpenStore({index: this.props.index, value: true})            
           })       
 
@@ -1106,6 +1105,8 @@ class DicomViewer extends React.Component {
     mprRenderYZPlane = (filename, origin, x, mprData) => {
       if (this.volume === null) return
       
+      //console.log('mprRenderYZPlane, mprData: ', mprData) 
+
       this.mprData = mprData
 
       const files = this.files === null ? this.props.files : this.files
@@ -1165,6 +1166,8 @@ class DicomViewer extends React.Component {
 
       this.mprData = mprData
 
+      //console.log('mprRenderXZPlane, mprData: ', mprData) 
+
       const files = this.files === null ? this.props.files : this.files
       
       this.sliceIndex = y
@@ -1201,70 +1204,111 @@ class DicomViewer extends React.Component {
     }
   
     mprBuildXZPlane = (y) => {
-      //console.log(`mprBuildXZPlane, xSize: ${this.xSize}, zSize: ${this.zSize} `)
       let plane = new Int16Array(this.xSize * this.zSize)
       for (let x = 0; x < this.xSize; x++) 
         for (let z = 0; z < this.zSize; z++)
-          plane[x + this.xSize * z] = this.volume[z][x + this.xSize * y] 
-      //console.log('mprBuildXZPlane, plane: ', plane)    
+          plane[x + this.xSize * z] = this.volume[z][x + this.xSize * y]     
       return plane
     }  
 
     mprIsOrthogonalView = () => {
-      //console.log('mprIsOrthogonalView: ', this.mprPlane)
       return (this.mprPlane !== '' && this.props.layout[0] === 1 && this.props.layout[1] === 3)
     }
 
-    mprSliceLocation = (index) => {
-      console.log('mprSliceLocationDraw: ', index)
-      console.log('mprData: ',  this.mprData)
+    mprReferenceLines = (index) => {
+      const fromPlane = this.props.activeDcm.mprPlane
+      const toPlane = this.mprPlane
+      const border = 3
+      const offset = this.mprData.instanceNumberOrder === 1 ? index * this.mprData.zStep : (this.mprData.indexMax - index) * this.mprData.zStep
+
       this.mpr.sliceLocation = {}
-      if (this.mprData.plane.from === 'axial') {
-        this.mpr.sliceLocation.p0 = new Point(10, index*this.mprData.zStep)
-        this.mpr.sliceLocation.p1 = new Point(this.xSize-10, index*this.mprData.zStep)
-        this.mpr.sliceLocation.p2 = new Point(this.xSize-10, (index+1)*this.mprData.zStep)
-        this.mpr.sliceLocation.p3 = new Point(10, (index+1)*this.mprData.zStep)
-      } else if (this.mprData.plane.from === 'sagittal') {
+      if (fromPlane === 'axial') {
+        this.mpr.sliceLocation.p0 = new Point(border, offset)
+        this.mpr.sliceLocation.p1 = new Point(this.xSize-border, offset)
+      } else if (fromPlane === 'sagittal') {
         const start = Math.round((this.xSize - this.zSize) / 2)
-        this.mpr.sliceLocation.p0 = new Point(start+index*this.mprData.zStep, 10)
-        this.mpr.sliceLocation.p1 = new Point(start+index*this.mprData.zStep, this.ySize-10)
-        this.mpr.sliceLocation.p2 = new Point(start+(index+1)*this.mprData.zStep, this.ySize-10)
-        this.mpr.sliceLocation.p3 = new Point(start+(index+1)*this.mprData.zStep, 10)
+        this.mpr.sliceLocation.p0 = new Point(start+offset, border)
+        this.mpr.sliceLocation.p1 = new Point(start+offset, this.ySize-border)
       } else { // from coronal
-        if (this.mprPlane === 'axial') {
-          this.mpr.sliceLocation.p0 = new Point(10, index*this.mprData.zStep)
-          this.mpr.sliceLocation.p1 = new Point(this.xSize-10, index*this.mprData.zStep)
-          this.mpr.sliceLocation.p2 = new Point(this.xSize-10, (index+1)*this.mprData.zStep)
-          this.mpr.sliceLocation.p3 = new Point(10, (index+1)*this.mprData.zStep)
+        if (toPlane === 'axial') {
+          this.mpr.sliceLocation.p0 = new Point(border, offset)
+          this.mpr.sliceLocation.p1 = new Point(this.xSize-border, offset)
         } else { // to sagittal
           const start = Math.round((this.xSize - this.zSize) / 2)
-          this.mpr.sliceLocation.p0 = new Point(start+index*this.mprData.zStep, 10)
-          this.mpr.sliceLocation.p1 = new Point(start+index*this.mprData.zStep, this.ySize-10)
-          this.mpr.sliceLocation.p2 = new Point(start+(index+1)*this.mprData.zStep, this.ySize-10)
-          this.mpr.sliceLocation.p3 = new Point(start+(index+1)*this.mprData.zStep, 10)          
+          this.mpr.sliceLocation.p0 = new Point(start+offset, border)
+          this.mpr.sliceLocation.p1 = new Point(start+offset, this.ySize-border)       
         }
-      } 
+      }
       this.mpr.isSliceLocation = true
       this.updateImage()
     }
 
-    mprSliceLocationDraw = (index) => {
+    mprReferenceLines2 = (index) => { // from second view to third view or from third view to second view
+      const fromPlane = this.props.activeDcm.mprPlane
+      const toPlane = this.mprPlane
+      const border = 3
+      const offset = this.mprData.instanceNumberOrder === 1 ?  index : index
+
+      this.mpr.sliceLocation = {}
+      if (fromPlane === 'axial') {
+        this.mpr.sliceLocation.p0 = new Point(border, offset)
+        this.mpr.sliceLocation.p1 = new Point(this.xSize-border, offset)
+      } else if (fromPlane === 'sagittal') {
+        this.mpr.sliceLocation.p0 = new Point(offset, border)
+        this.mpr.sliceLocation.p1 = new Point(offset, this.zSize-border)
+      } else { // from coronal
+        if (toPlane === 'axial') {
+          this.mpr.sliceLocation.p0 = new Point(border, offset)
+          this.mpr.sliceLocation.p1 = new Point(this.xSize-border, offset)
+        } else { // to sagittal
+          this.mpr.sliceLocation.p0 = new Point(offset, border)
+          this.mpr.sliceLocation.p1 = new Point(offset, this.zSize-border)      
+        }
+      }
+      this.mpr.isSliceLocation = true
+      this.updateImage()
+    }
+
+    mprReferenceLines3 = (index, mprData) => { // from second or third view to first view
+      const xSize = this.image.columns
+      const ySize = this.image.rows
+      const fromPlane = this.props.activeDcm.mprPlane
+      const toPlane = this.mprPlane
+      const offset = 3
+
+      this.mpr.sliceLocation = {}
+      if (fromPlane === 'axial') {
+        this.mpr.sliceLocation.p0 = new Point(offset, index)
+        this.mpr.sliceLocation.p1 = new Point(xSize-offset, index)
+      } else if (fromPlane === 'sagittal') {
+        this.mpr.sliceLocation.p0 = new Point(index, offset)
+        this.mpr.sliceLocation.p1 = new Point(index, ySize-offset)
+      } else { // from coronal
+        if (toPlane === 'axial') {
+          this.mpr.sliceLocation.p0 = new Point(offset, index)
+          this.mpr.sliceLocation.p1 = new Point(xSize-offset, index)
+        } else { // to sagittal
+          this.mpr.sliceLocation.p0 = new Point(index, offset)
+          this.mpr.sliceLocation.p1 = new Point(index, ySize-offset)      
+        }
+      }
+      this.mpr.isSliceLocation = true
+      this.updateImage()
+    }
+
+    mprSliceLocationDraw = () => {
       const canvas = document.getElementById(`viewer-${this.props.index}`).getElementsByClassName('cornerstone-canvas')[0]
-      const ctxH = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d")
       const p0 = this.mpr.sliceLocation.p0
       const p1 = this.mpr.sliceLocation.p1
-      const p2 = this.mpr.sliceLocation.p2
-      const p3 = this.mpr.sliceLocation.p3
-      ctxH.beginPath()
-      ctxH.setLineDash([])
-      ctxH.strokeStyle = 'rgba(105, 105, 250, 0.5)'
-      ctxH.moveTo(p0.x, p0.y)
-      ctxH.lineTo(p1.x, p1.y)
-      ctxH.lineTo(p2.x, p2.y)
-      ctxH.lineTo(p3.x, p3.y)
-      ctxH.lineTo(p0.x, p0.y)
-      ctxH.lineWidth = 1
-      ctxH.stroke()
+      ctx.beginPath()
+      ctx.setLineDash([])
+      if (this.zoom < 150) ctx.lineWidth = 2
+      ctx.strokeStyle = 'rgba(255, 255, 51, 0.7)'
+      ctx.moveTo(p0.x, p0.y)
+      ctx.lineTo(p1.x, p1.y)
+      ctx.lineWidth = 1
+      ctx.stroke()
     }
 
     //#endregion
@@ -1417,19 +1461,11 @@ class DicomViewer extends React.Component {
       const plane = this.referenceLines.plane
 
       const d = Math.max(this.referenceLines.dst.rows, this.referenceLines.dst.cols) / 30
-      //console.log('d: ', d)
 
       const line0 = new Line(plane[0], plane[1])
-      //console.log('line0: ', line0)
       const line1 = new Line(plane[1], plane[2])
-      //console.log('line1: ', line1)
       const line2 = new Line(plane[2], plane[3])
-      //console.log('line2: ', line2)
       const line3 = new Line(plane[3], plane[0])
-      //console.log('line3: ', line3)
-
-      //console.log('d 0-2: ', line0.distance(line2))
-      //console.log('d 1-3: ', line1.distance(line3))
 
       if (Math.min(line0.distance(line2), line1.distance(line3)) < d) return
 

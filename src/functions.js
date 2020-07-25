@@ -1,3 +1,4 @@
+import Vector from './LinearAlgebra/Vector'
 import { 
     isAndroid,
     isFirefox,
@@ -150,6 +151,15 @@ export function getDicomEchoNumber(image) {
     return parseFloat(value)
 }
 
+
+export function getDicomPatientPosition(image) {
+    const value = image.data.string('x00185100')
+    if (value === undefined) {
+        return
+    }
+    return parseFloat(value)
+}
+
 export function getDicomSliceLocation(image) {
     const value = image.data.string('x00201041')
     if (value === undefined) {
@@ -186,6 +196,27 @@ export function isLocalizer(image) {
     const values = image.data.string('x00080008').split('\\')
     console.log('Localizer: ', values)
     return values.length === 3 && values[2] === 'LOCALIZER'
+}
+
+export function getDicomNearestAxis(image) {
+    const ipp = image.data.string('x00200032').split('\\').map(v => parseFloat(v)) // Image Position Patient - x, y, z of top hand corner
+    const xabs = Math.abs(ipp[0])
+    const yabs = Math.abs(ipp[1])
+    const zabs = Math.abs(ipp[2])
+    let axes = Vector.zero
+    if (xabs >= yabs && xabs >= zabs) 
+        axes.x = (ipp[0] > 0.0) ? 1.0 : -1.0
+    else if (yabs >= zabs) 
+        axes.y = (ipp[1] > 0.0) ? 1.0 : -1.0
+    else 
+        axes.z = (ipp[2] > 0.0) ? 1.0 : -1.0
+    return axes
+}
+
+export function getDicomImageXOnRows(image) {
+    const iop = image.data.string('x00200037').split('\\').map(v => parseFloat(v))
+    if (iop[0] > iop[1]) return true
+    else return false
 }
 
 // see https://stackoverflow.com/questions/37730772/get-distance-between-slices-in-dicom
