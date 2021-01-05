@@ -11,7 +11,7 @@
     "@mdi/react": "^1.4.0",
     "@react-md/material-icons": "^2.1.0",
     "acorn": "^7.3.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "blob-util": "^2.0.2",
     "cornerstone-core": "^2.3.0",
     "cornerstone-file-image-loader": "^0.3.0",
