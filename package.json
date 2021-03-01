@@ -47,7 +47,7 @@
     "redux": "^4.0.5",
     "serialize-javascript": "^3.1.0",
     "set-value": "3.0.2",
-    "three": "^0.118.3",
+    "three": "^0.125.0",
     "uuid": "^8.2.0",
     "webfontloader": "^1.6.28"
   },
