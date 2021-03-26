@@ -2,7 +2,7 @@
   "name": "u-dicom-viewer",
   "version": "0.8.1",
   "private": true,
-  "homepage": "https://webnamics.github.io/u-dicom-viewer/",
+  "homepage": "https://dicom.salmanrajz.com/",
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
