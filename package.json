@@ -20,7 +20,7 @@
     "cornerstone-wado-image-loader": "git+https://github.com/webnamics/cornerstoneWADOImageLoader.git",
     "cornerstone-web-image-loader": "^2.1.1",
     "daikon": "^1.2.42",
-    "dexie": "^3.0.1",
+    "dexie": "^3.2.2",
     "dicom-parser": "^1.8.5",
     "file-saver": "^2.0.2",
     "gh-pages": "^3.1.0",
