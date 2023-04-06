@@ -24,12 +24,12 @@ const theme = createMuiTheme({
             },
         },
         MuiFormLabel: {
-            root: { 
+            root: {
                 '&$focused': {
                     color:'#CCCCCC',
-                },   
+                },
             }
-         
+
         }
     },
     palette: {
@@ -43,13 +43,13 @@ const theme = createMuiTheme({
     },
   })
 
-  
+
 ReactDOM.render(
     <Provider store={store}>
         <MuiThemeProvider theme = { theme }>
-            <App />
+            <App urls={[]} />
         </MuiThemeProvider>
-    </Provider>, 
+    </Provider>,
     document.getElementById('root')
 )
 
@@ -57,4 +57,3 @@ ReactDOM.render(
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.register()
- 
