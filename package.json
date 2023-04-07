@@ -1,14 +1,16 @@
 {
-  "name": "u-dicom-viewer",
+  "name": "u-dicom-viewer-package",
   "version": "0.8.1",
   "private": true,
-  "homepage": "https://webnamics.github.io/u-dicom-viewer/",
+  "main":"./src/index.jsx",
+  "module":"./src/index.jsx",
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
     "@mdi/js": "^5.3.45",
     "@mdi/react": "^1.4.0",
+    "@mui/icons-material": "^5.11.16",
     "@react-md/material-icons": "^2.1.0",
     "acorn": "^7.3.1",
     "axios": "^0.19.2",
