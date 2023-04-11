@@ -1,4 +1,4 @@
-import {createStore} from 'redux'
+import { createStore } from 'redux'
 import storeReducer from '../reducers/index'
 
 let initialState = {
@@ -16,7 +16,7 @@ let initialState = {
     explorerActiveStudyIndex: 0,
     explorerActiveSeriesIndex: 0,
     measurements: [],
-    layout: [1,1], // first element represents the rows, second the columns
+    layout: [1, 1], // first element represents the rows, second the columns
     dicomdir: null,
     fsCurrentDir: '',
     fsCurrentList: [],
@@ -26,7 +26,7 @@ let initialState = {
     dcmEnableTool: false,
 }
 
-const store = createStore(storeReducer, initialState,
-    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
+const store = createStore(storeReducer, initialState)
+    // , window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 
 export default store

@@ -1,18 +1,18 @@
 import Vector from './LinearAlgebra/Vector'
-import { 
+import {
     isAndroid,
     isFirefox,
-    isMobile, 
-    isTablet 
+    isMobile,
+    isTablet
   } from 'react-device-detect'
-import { 
-    SETTINGS_SAVEAS, 
+import {
+    SETTINGS_SAVEAS,
     SETTINGS_SAVEINTO,
-    SETTINGS_DCMHEADER, 
-    SETTINGS_OVERLAY, 
+    SETTINGS_DCMHEADER,
+    SETTINGS_OVERLAY,
     SETTINGS_MEASUREMENT,
     SETTINGS_FSVIEW,
-    SETTINGS_DICOMDIRVIEW,    
+    SETTINGS_DICOMDIRVIEW,
     SETTINGS_MPRINTERPOLATION,
 } from './constants/settings'
 
@@ -35,7 +35,7 @@ export function getDicomStudyId(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomStudyDate(image) {
     const value = image.data.string('x00080020')
@@ -43,7 +43,7 @@ export function getDicomStudyDate(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomStudyTime(image) {
     const value = image.data.string('x00080030')
@@ -51,7 +51,7 @@ export function getDicomStudyTime(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomStudyDescription(image) {
     const value = image.data.string('x00081030')
@@ -59,7 +59,7 @@ export function getDicomStudyDescription(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomSeriesDate(image) {
     const value = image.data.string('x00080021')
@@ -67,7 +67,7 @@ export function getDicomSeriesDate(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomSeriesTime(image) {
     const value = image.data.string('x00080031')
@@ -75,7 +75,7 @@ export function getDicomSeriesTime(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomSeriesDescription(image) {
     const value = image.data.string('x0008103e')
@@ -166,7 +166,7 @@ export function getDicomSliceLocation(image) {
         return
     }
     return parseFloat(value)
-}	
+}
 
 export function getDicomInstanceNumber(image) {
     const value = image.data.string('x00200013')
@@ -174,14 +174,14 @@ export function getDicomInstanceNumber(image) {
         return
     }
     return value
-}	
+}
 
 export function getDicomRows(image) {
     const value = image.data.uint16('x00280010')
     if (value === undefined) {
         return
     }
-    return value    
+    return value
 }
 
 export function getDicomColumns(image) {
@@ -189,8 +189,8 @@ export function getDicomColumns(image) {
     if (value === undefined) {
         return
     }
-    return value    
-} 
+    return value
+}
 
 export function isLocalizer(image) {
     const values = image.data.string('x00080008').split('\\')
@@ -204,11 +204,11 @@ export function getDicomNearestAxis(image) {
     const yabs = Math.abs(ipp[1])
     const zabs = Math.abs(ipp[2])
     let axes = Vector.zero
-    if (xabs >= yabs && xabs >= zabs) 
+    if (xabs >= yabs && xabs >= zabs)
         axes.x = (ipp[0] > 0.0) ? 1.0 : -1.0
-    else if (yabs >= zabs) 
+    else if (yabs >= zabs)
         axes.y = (ipp[1] > 0.0) ? 1.0 : -1.0
-    else 
+    else
         axes.z = (ipp[2] > 0.0) ? 1.0 : -1.0
     return axes
 }
@@ -240,19 +240,19 @@ export function getDicomSliceDistance(image) {
         v[0][2] = parseFloat(iop[2]) // the z direction cosines of the first row X
         v[1][0] = parseFloat(iop[3]) // the x direction cosines of the first column Y
         v[1][1] = parseFloat(iop[4]) // the y direction cosines of the first column Y
-        v[1][2] = parseFloat(iop[5]) // the z direction cosines of the first column Y 
+        v[1][2] = parseFloat(iop[5]) // the z direction cosines of the first column Y
 
         // calculate the slice normal from IOP
         v[2][0] = v[0][1] * v[1][2] - v[0][2] * v[1][1]
         v[2][1] = v[0][2] * v[1][0] - v[0][0] * v[1][2]
         v[2][2] = v[0][0] * v[1][1] - v[0][1] * v[1][0]
-        
+
         //console.log("slice normal from IOP: ", v[2])
 
         let dist = 0
-        for (let i = 0; i < 3; ++i) 
+        for (let i = 0; i < 3; ++i)
             dist += v[2][i] * topLeftCorner[i]
-        
+
         return dist
     } catch(error) {
         return 0
@@ -277,7 +277,7 @@ export function dicomDateTimeToLocale(dateTime) {
     return `${localeDate} - ${time}`
 }
 
-//#endregion  
+//#endregion
 
 export function groupBy(list, keyGetter) {
     const map = new Map()
@@ -301,27 +301,27 @@ export function objectIsEmpty(obj) {
 }
 
 export function capitalize(str) {
-    if (str === undefined) 
+    if (str === undefined)
         return ''
-    else 
+    else
         return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-// To see the console output set the key 'debug-u-dicom-viewer' in 
+// To see the console output set the key 'debug-u-dicom-viewer' in
 // 'Storage->Local Storage' panel of your browser Develop Tool
 export function log() {
     let log = localStorage.getItem('debug-u-dicom-viewer')
     if (log === null) {
-        console.log = function(){}
+        // console.log = function(){}
     }
 }
 
 export function isInputDirSupported() {
     var tmpInput = document.createElement('input')
-    if ('webkitdirectory' in tmpInput 
-        || 'mozdirectory' in tmpInput 
-        || 'odirectory' in tmpInput 
-        || 'msdirectory' in tmpInput 
+    if ('webkitdirectory' in tmpInput
+        || 'mozdirectory' in tmpInput
+        || 'odirectory' in tmpInput
+        || 'msdirectory' in tmpInput
         || 'directory' in tmpInput) return true
     return false
 }
@@ -332,8 +332,8 @@ export function isUrlImage(url) {
 }
 
 export function isFileImage(file) {
-    if (file === undefined || file === null) return false 
-    const acceptedImageTypes = ['image/jpeg', 'image/png'] // 'image/gif', 
+    if (file === undefined || file === null) return false
+    const acceptedImageTypes = ['image/jpeg', 'image/png'] // 'image/gif',
     return file && acceptedImageTypes.includes(file['type'])
 }
 
@@ -350,7 +350,7 @@ export function getFileNameCorrect(filename) {
             return getFileName(filename)
         }
     }
-    return filename 
+    return filename
 }
 
 export function getFileExt(file) {
@@ -376,7 +376,7 @@ export function getFileName(file) {
     if (name === undefined) {
         return ''
     }
-    return name    
+    return name
 }
 
 export function formatBytes(bytes, decimals = 2) {
@@ -390,7 +390,7 @@ export function formatBytes(bytes, decimals = 2) {
 }
 
 
-// ---------------------------------------------------------------------------------------------- SETTINGS 
+// ---------------------------------------------------------------------------------------------- SETTINGS
 //#region  SETTINGS
 
 export function getSettingsSaveAs() {
@@ -403,7 +403,7 @@ export function getSettingsSaveAs() {
 }
 
 export function setSettingsSaveAs(value) {
-    localStorage.setItem(SETTINGS_SAVEAS, value)  
+    localStorage.setItem(SETTINGS_SAVEAS, value)
 }
 
 export function getSettingsSaveInto() {
@@ -416,7 +416,7 @@ export function getSettingsSaveInto() {
 }
 
 export function setSettingsSaveInto(value) {
-    localStorage.setItem(SETTINGS_SAVEINTO, value)  
+    localStorage.setItem(SETTINGS_SAVEINTO, value)
 }
 
 export function getSettingsDcmHeader() {
@@ -424,12 +424,12 @@ export function getSettingsDcmHeader() {
     if (exportAs === null) {
       exportAs = "json"
       localStorage.setItem(SETTINGS_DCMHEADER, exportAs)
-    }  
+    }
     return exportAs
 }
 
 export function setSettingsDcmHeader(value) {
-    localStorage.setItem(SETTINGS_DCMHEADER, value)  
+    localStorage.setItem(SETTINGS_DCMHEADER, value)
 }
 
 export function getSettingsOverlay() {
@@ -442,7 +442,7 @@ export function getSettingsOverlay() {
 }
 
 export function setSettingsOverlay(value) {
-    localStorage.setItem(SETTINGS_OVERLAY, value ? '1' : '0')  
+    localStorage.setItem(SETTINGS_OVERLAY, value ? '1' : '0')
 }
 
 export function getSettingsMeasurement() {
@@ -455,7 +455,7 @@ export function getSettingsMeasurement() {
 }
 
 export function setSettingsMeasurement(value) {
-    localStorage.setItem(SETTINGS_MEASUREMENT, value)  
+    localStorage.setItem(SETTINGS_MEASUREMENT, value)
 }
 
 export function getSettingsFsView() {
@@ -468,7 +468,7 @@ export function getSettingsFsView() {
 }
 
 export function setSettingsFsView(value) {
-    localStorage.setItem(SETTINGS_FSVIEW, value)  
+    localStorage.setItem(SETTINGS_FSVIEW, value)
 }
 
 export function getSettingsDicomdirView() {
@@ -481,7 +481,7 @@ export function getSettingsDicomdirView() {
 }
 
 export function setSettingsDicomdirView(value) {
-    localStorage.setItem(SETTINGS_DICOMDIRVIEW, value)  
+    localStorage.setItem(SETTINGS_DICOMDIRVIEW, value)
 }
 
 export function getSettingsMprInterpolation() {
@@ -494,7 +494,7 @@ export function getSettingsMprInterpolation() {
 }
 
 export function setSettingsMprInterpolation(value) {
-    localStorage.setItem(SETTINGS_MPRINTERPOLATION, value)  
+    localStorage.setItem(SETTINGS_MPRINTERPOLATION, value)
 }
 
 //#endregion

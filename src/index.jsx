@@ -3,17 +3,17 @@ import App from "./App";
 import WebFontLoader from "webfontloader";
 import { Provider } from "react-redux";
 import store from "./store";
-import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import { MuiThemeProvider, createTheme } from "@material-ui/core/styles";
 
-WebFontLoader.load({
-    google: {
-        families: ["Roboto:300,400,500,700", "Material Icons"],
-    },
-});
+// WebFontLoader.load({
+//     google: {
+//         families: ["Roboto:300,400,500,700", "Material Icons"],
+//     },
+// });
 
 //store.subscribe(() => console.log('store updated:', store.getState()));
 
-const theme = createMuiTheme({
+const theme = createTheme({
     overrides: {
         MuiFormControlLabel: {
             label: {
@@ -38,11 +38,11 @@ const theme = createMuiTheme({
         type: "dark",
     },
 });
-const Index = ({ files }) => {
+const Index = (props) => {
     return (
         <Provider store={store}>
             <MuiThemeProvider theme={theme}>
-                <App files={files} />
+                <App {...props} />
             </MuiThemeProvider>
         </Provider>
     );

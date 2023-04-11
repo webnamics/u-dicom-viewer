@@ -1,7 +1,7 @@
 import React, { PureComponent } from "react";
 import { withStyles } from "@material-ui/core/styles";
 import { connect } from "react-redux";
-// import AboutDlg from './components/AboutDlg'
+import AboutDlg from "./components/AboutDlg";
 import Dicomdir from "./components/Dicomdir";
 import DicomViewer from "./components/DicomViewer";
 import DicomHeader from "./components/DicomHeader";
@@ -126,12 +126,9 @@ import {
     mdiSkipPrevious,
 } from "@mdi/js";
 
-import "./App.css";
-import axios from "axios";
-
 //import * as cornerstoneTools from "cornerstone-tools"
 
-log();
+// log();
 
 //localStorage.setItem("debug", "cornerstoneTools")
 
@@ -284,7 +281,7 @@ class App extends PureComponent {
         visibleTools: false,
         visibleMeasure: false,
         visibleClearMeasureDlg: false,
-        // visibleAbout: false,
+        visibleAbout: false,
         visibleDicomdir: false,
         visibleFileManager: false,
         visibleZippedFileDlg: false,
@@ -319,7 +316,7 @@ class App extends PureComponent {
                     this.dicomViewersRefs[index] = ref;
                 }}
                 index={index}
-                dicomViewersRefs={this.dicomViewersRef}
+                dicomViewersRefs={this.dicomViewersRefs}
                 runTool={(ref) => (this.runTool = ref)}
                 changeTool={(ref) => (this.changeTool = ref)}
                 onLoadedImage={this.onLoadedImage}
@@ -369,19 +366,9 @@ class App extends PureComponent {
             this.changeLayout(1, 1);
             this.mprPlane = "";
             this.volume = [];
-            this.setState(
-                {
-                    sliceIndex: 0,
-                    sliceMax: 1,
-                    visibleMprOrthogonal: false,
-                    visibleMprCoronal: false,
-                    visibleMprSagittal: false,
-                    visibleMprAxial: false,
-                },
-                () => {
-                    this.setState({ visibleOpenMultipleFilesDlg: true });
-                }
-            );
+            this.setState({ sliceIndex: 0, sliceMax: 1, visibleMprOrthogonal: false, visibleMprCoronal: false, visibleMprSagittal: false, visibleMprAxial: false }, () => {
+                this.setState({ visibleOpenMultipleFilesDlg: true });
+            });
         } else {
             const file = filesSelected[0];
             if (file.type === "application/x-zip-compressed" || file.type === "application/zip") {
@@ -510,14 +497,7 @@ class App extends PureComponent {
             this.files.push(files[i]);
         }
 
-        this.setState({
-            sliceIndex: 0,
-            sliceMax: 1,
-            visibleMprOrthogonal: false,
-            visibleMprCoronal: false,
-            visibleMprSagittal: false,
-            visibleMprAxial: false,
-        });
+        this.setState({ sliceIndex: 0, sliceMax: 1, visibleMprOrthogonal: false, visibleMprCoronal: false, visibleMprSagittal: false, visibleMprAxial: false });
         this.setState({ visibleOpenMultipleFilesDlg: true });
     };
 
@@ -552,7 +532,13 @@ class App extends PureComponent {
         // Need to set the renderNode since the drawer uses an overlay
         //this.dialog = document.getElementById('drawer-routing-example-dialog')
         window.scrollTo(0, 0);
-        this.handleOpenLocalFs(this.props.files);
+        // if (this.props.zipFile) this.props.setFsZippedFile(this.props.zipFile);
+        console.log(this.props.dicoms);
+        // if (this.props.dicoms.length > 1) {
+        this.handleOpenLocalFs(this.props.dicoms);
+        // this.props.setFilesStore(this.props.dicoms);
+        // this.dicomViewersRefs[this.props.activeDcmIndex].runTool("setfiles", this.props.dicoms);
+        // }
     }
 
     showAppBar = () => {
@@ -709,9 +695,9 @@ class App extends PureComponent {
         });
     };
 
-    // showAbout = () => {
-    //   this.setState({ visibleAbout: !this.state.visibleAbout })
-    // }
+    showAbout = () => {
+        this.setState({ visibleAbout: !this.state.visibleAbout });
+    };
 
     showSettings = () => {
         this.setState({
@@ -773,9 +759,9 @@ class App extends PureComponent {
         }
     };
 
-    // showOpenUrl = () => {
-    //   this.setState({ visibleOpenUrl: true })
-    // }
+    showOpenUrl = () => {
+        this.setState({ visibleOpenUrl: true });
+    };
 
     hideOpenUrl = (openDlg) => {
         this.setState({ visibleOpenUrl: false }, () => {
@@ -812,18 +798,7 @@ class App extends PureComponent {
         this.layoutGridClick(0);
         for (let i = 0; i < this.props.isOpen.length; i++) if (this.props.isOpen[i]) this.dicomViewersRefs[i].runTool("clear");
         setTimeout(() => {
-            this.setState(
-                {
-                    openImageEdit: false,
-                    openTools: false,
-                    mprMenu: false,
-                    visibleToolbox: false,
-                    visibleMeasure: false,
-                    visibleHeader: false,
-                    visibleDicomdir: false,
-                },
-                () => {}
-            );
+            this.setState({ openImageEdit: false, openTools: false, mprMenu: false, visibleToolbox: false, visibleMeasure: false, visibleHeader: false, visibleDicomdir: false }, () => {});
             this.changeLayout(1, 1);
             this.props.setFilesStore(null);
             this.props.setDicomdirStore(null);
@@ -993,7 +968,12 @@ class App extends PureComponent {
     appBarTitle = (classes, isOpen, dcmViewer) => {
         if (isMobile && !isTablet) {
             if (isOpen) return null;
-            else return <></>;
+            else
+                return (
+                    <Typography variant="overline" className={classes.title}>
+                        <strong>U</strong> <strong>D</strong>icom <strong>V</strong>iewer
+                    </Typography>
+                );
         } else {
             if (isOpen) {
                 const plane = this.getStringVisiblePlane();
@@ -1015,7 +995,12 @@ class App extends PureComponent {
                         {this.props.dicomdir.dicomdir.webkitRelativePath}
                     </Typography>
                 );
-            }
+            } else
+                return (
+                    <Typography variant="overline" className={classes.title}>
+                        <strong>U</strong> <strong>D</strong>icom <strong>V</strong>iewer
+                    </Typography>
+                );
         }
     };
 
@@ -1068,16 +1053,16 @@ class App extends PureComponent {
         }
     };
     /*
-    referenceLinesDraw = () => {
-      if (this.state.mprMode) return
-      console.log('referenceLinesDraw: ')
-      console.log('referenceLinesDraw, this.referenceLines.crossViewer: ', this.referenceLines.crossViewer)
-      this.referenceLines.crossViewer.updateImage()
-      for(let i=0; i < this.openViewers.length; i++) {
-        this.openViewers[i].referenceLinesBuild(this.referenceLines.crossViewer.image) // this is scout image
-      }
+  referenceLinesDraw = () => {
+    if (this.state.mprMode) return
+    console.log('referenceLinesDraw: ')
+    console.log('referenceLinesDraw, this.referenceLines.crossViewer: ', this.referenceLines.crossViewer)
+    this.referenceLines.crossViewer.updateImage()
+    for(let i=0; i < this.openViewers.length; i++) {
+      this.openViewers[i].referenceLinesBuild(this.referenceLines.crossViewer.image) // this is scout image
     }
-  */
+  }
+*/
     // #endregion
 
     // ---------------------------------------------------------------------------------------------- MPR
@@ -1201,11 +1186,11 @@ class App extends PureComponent {
                 }
             }
             /*
-            order.sort((l, r) => {
-              return r.sliceDistance - l.sliceDistance
-              // return l.instanceNumber - r.instanceNumber
-            })
-      */
+      order.sort((l, r) => {
+        return r.sliceDistance - l.sliceDistance
+        // return l.instanceNumber - r.instanceNumber
+      })
+*/
             //console.log('order 2: ', order)
 
             this.mprData.instanceNumberOrder = files[order[0].iFile].instanceNumber < files[order[1].iFile].instanceNumber ? 1 : -1;
@@ -1455,25 +1440,17 @@ class App extends PureComponent {
                 from: this.mprPlane,
                 to: "orthogonal",
             };
-            this.setState(
-                {
-                    visibleMprOrthogonal: true,
-                    visibleMprCoronal: false,
-                    visibleMprSagittal: false,
-                    visibleMprAxial: false,
-                },
-                () => {
-                    if (this.volume.length === 0) {
-                        this.setState({ visibleVolumeBuilding: true }, () => {
-                            setTimeout(() => {
-                                this.mprBuildVolume();
-                            }, 100);
-                        });
-                    } else {
-                        this.changeToOrthogonalView();
-                    }
+            this.setState({ visibleMprOrthogonal: true, visibleMprCoronal: false, visibleMprSagittal: false, visibleMprAxial: false }, () => {
+                if (this.volume.length === 0) {
+                    this.setState({ visibleVolumeBuilding: true }, () => {
+                        setTimeout(() => {
+                            this.mprBuildVolume();
+                        }, 100);
+                    });
+                } else {
+                    this.changeToOrthogonalView();
                 }
-            );
+            });
         }
     };
 
@@ -1484,25 +1461,17 @@ class App extends PureComponent {
                 from: this.mprPlane,
                 to: "sagittal",
             };
-            this.setState(
-                {
-                    visibleMprOrthogonal: false,
-                    visibleMprSagittal: true,
-                    visibleMprCoronal: false,
-                    visibleMprAxial: false,
-                },
-                () => {
-                    if (this.volume.length === 0) {
-                        this.setState({ visibleVolumeBuilding: true }, () => {
-                            setTimeout(() => {
-                                this.mprBuildVolume();
-                            }, 100);
-                        });
-                    } else {
-                        this.changeToSagittalView();
-                    }
+            this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: true, visibleMprCoronal: false, visibleMprAxial: false }, () => {
+                if (this.volume.length === 0) {
+                    this.setState({ visibleVolumeBuilding: true }, () => {
+                        setTimeout(() => {
+                            this.mprBuildVolume();
+                        }, 100);
+                    });
+                } else {
+                    this.changeToSagittalView();
                 }
-            );
+            });
         }
     };
 
@@ -1513,25 +1482,17 @@ class App extends PureComponent {
                 from: this.mprPlane,
                 to: "coronal",
             };
-            this.setState(
-                {
-                    visibleMprOrthogonal: false,
-                    visibleMprSagittal: false,
-                    visibleMprCoronal: true,
-                    visibleMprAxial: false,
-                },
-                () => {
-                    if (this.volume.length === 0) {
-                        this.setState({ visibleVolumeBuilding: true }, () => {
-                            setTimeout(() => {
-                                this.mprBuildVolume();
-                            }, 100);
-                        });
-                    } else {
-                        this.changeToCoronalView();
-                    }
+            this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprCoronal: true, visibleMprAxial: false }, () => {
+                if (this.volume.length === 0) {
+                    this.setState({ visibleVolumeBuilding: true }, () => {
+                        setTimeout(() => {
+                            this.mprBuildVolume();
+                        }, 100);
+                    });
+                } else {
+                    this.changeToCoronalView();
                 }
-            );
+            });
         }
     };
 
@@ -1542,25 +1503,17 @@ class App extends PureComponent {
                 from: this.mprPlane,
                 to: "axial",
             };
-            this.setState(
-                {
-                    visibleMprOrthogonal: false,
-                    visibleMprSagittal: false,
-                    visibleMprCoronal: false,
-                    visibleMprAxial: true,
-                },
-                () => {
-                    if (this.volume.length === 0) {
-                        this.setState({ visibleVolumeBuilding: true }, () => {
-                            setTimeout(() => {
-                                this.mprBuildVolume();
-                            }, 100);
-                        });
-                    } else {
-                        this.changeToAxialView();
-                    }
+            this.setState({ visibleMprOrthogonal: false, visibleMprSagittal: false, visibleMprCoronal: false, visibleMprAxial: true }, () => {
+                if (this.volume.length === 0) {
+                    this.setState({ visibleVolumeBuilding: true }, () => {
+                        setTimeout(() => {
+                            this.mprBuildVolume();
+                        }, 100);
+                    });
+                } else {
+                    this.changeToAxialView();
                 }
-            );
+            });
         }
     };
 
@@ -1636,14 +1589,7 @@ class App extends PureComponent {
         let index = this.props.activeDcmIndex;
         if (this.state.mprMode) {
             index = 0;
-            this.setState({
-                sliceIndex: 0,
-                sliceMax: 1,
-                visibleMprOrthogonal: false,
-                visibleMprCoronal: false,
-                visibleMprSagittal: false,
-                visibleMprAxial: false,
-            });
+            this.setState({ sliceIndex: 0, sliceMax: 1, visibleMprOrthogonal: false, visibleMprCoronal: false, visibleMprSagittal: false, visibleMprAxial: false });
             this.props.setActiveDcmIndex(index);
             this.changeLayout(1, 1);
         }
@@ -1751,7 +1697,7 @@ class App extends PureComponent {
         const visibleMainMenu = this.state.visibleMainMenu;
         const visibleHeader = this.state.visibleHeader;
         const visibleSettings = this.state.visibleSettings;
-        // const visibleAbout = this.state.visibleAbout
+        const visibleAbout = this.state.visibleAbout;
         const visibleMeasure = this.state.visibleMeasure;
         const visibleToolbox = this.state.visibleToolbox;
         const visibleDicomdir = this.state.visibleDicomdir;
@@ -1794,12 +1740,11 @@ class App extends PureComponent {
                         {this.appBarTitle(classes, isOpen, dcmViewer)}
 
                         <div className={classes.grow} />
-                        {/* { !isOpen && !isDicomdir ? (
-              <IconButton onClick={this.showAbout}>
-                <Icon path={mdiInformationOutline} size={iconSize} color={iconColor} />
-              </IconButton>
-             ) : null
-            } */}
+                        {!isOpen && !isDicomdir ? (
+                            <IconButton onClick={this.showAbout}>
+                                <Icon path={mdiInformationOutline} size={iconSize} color={iconColor} />
+                            </IconButton>
+                        ) : null}
                         {/*
             { iconTool !== null && this.props.tool !== null &&  isOpen ? (
                 <IconButton onClick={this.toolChange}>
@@ -1872,14 +1817,13 @@ class App extends PureComponent {
                                 </IconButton>
                             </Tooltip>
                         ) : null}
-                        {/* { isOpen ? (
-              <Tooltip title="Sandbox File Manager">
-                <IconButton color="inherit" onClick={this.toggleFileManager}>
-                  <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
-                </IconButton>
-              </Tooltip>
-              ) : null
-            } */}
+                        {isOpen ? (
+                            <Tooltip title="Sandbox File Manager">
+                                <IconButton color="inherit" onClick={this.toggleFileManager}>
+                                    <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
+                                </IconButton>
+                            </Tooltip>
+                        ) : null}
                     </Toolbar>
                 </AppBar>
 
@@ -1893,57 +1837,87 @@ class App extends PureComponent {
                                     </ListItemIcon>
                                     <ListItemText primary="Tool Bar" />
                                 </ListItem>
-                                {/* <ListItem button onClick={() => this.toggleFileManager()}>
-                <ListItemIcon><Icon path={mdiFileCabinet} size={iconSize} color={iconColor} /></ListItemIcon>
-                <ListItemText classes={primaryClass} primary='File Manager' />
-              </ListItem>
+                                <ListItem button onClick={() => this.toggleFileManager()}>
+                                    <ListItemIcon>
+                                        <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
+                                    </ListItemIcon>
+                                    <ListItemText classes={primaryClass} primary="File Manager" />
+                                </ListItem>
 
-              <ListItem button onClick={() => this.toggleOpenMenu()}>
-                <ListItemIcon><Icon path={mdiFolderMultiple} size={iconSize} color={iconColor} /></ListItemIcon>
-                <ListItemText classes={primaryClass} primary='Open ...' />
-                {openMenu ? <ExpandLess /> : <ExpandMore />}
-              </ListItem> */}
-                                {/* <Collapse in={openMenu} timeout="auto" unmountOnExit>
-                <List dense={true} component="div">
-                  <ListItem button style={{paddingLeft: 30}} onClick={() => this.showFileOpen()}>
-                    <ListItemIcon><Icon path={mdiFolder} size={'1.0rem'} color={iconColor} /></ListItemIcon>
-                    <ListItemText classes={primaryClass}
-                      primary={
-                        <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-20px'}}>File</Typography>
-                      } />
-                  </ListItem>
-                  <ListItem button style={{paddingLeft: 30}} onClick={() => this.showOpenUrl()}>
-                    <ListItemIcon><Icon path={mdiWeb} size={'1.0rem'} color={iconColor} /></ListItemIcon>
-                    <ListItemText classes={primaryClass}
-                      primary={
-                        <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-20px'}}>URL</Typography>
-                      } />
-                  </ListItem>
-                  { isInputDirSupported() && !isMobile?
-                  <ListItem button style={{paddingLeft: 30}} onClick={() => this.showOpenFolder()}>
-                    <ListItemIcon><Icon path={mdiFolderOpen} size={'1.0rem'} color={iconColor} /></ListItemIcon>
-                    <ListItemText classes={primaryClass}
-                      primary={
-                        <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-20px'}}>Folder</Typography>
-                      } />
-                  </ListItem>
-                  : null }
-                  { isInputDirSupported() && !isMobile?
-                  <ListItem button style={{paddingLeft: 30}} onClick={() => this.showOpenDicomdir()}>
-                    <ListItemIcon><Icon path={mdiFolderOpen} size={'1.0rem'} color={iconColor} /></ListItemIcon>
-                    <ListItemText classes={primaryClass}
-                      primary={
-                        <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-20px'}}>DICOMDIR</Typography>
-                      } />
-                  </ListItem>
-                  : null }
-                </List>
-              </Collapse> */}
+                                <ListItem button onClick={() => this.toggleOpenMenu()}>
+                                    <ListItemIcon>
+                                        <Icon path={mdiFolderMultiple} size={iconSize} color={iconColor} />
+                                    </ListItemIcon>
+                                    <ListItemText classes={primaryClass} primary="Open ..." />
+                                    {openMenu ? <ExpandLess /> : <ExpandMore />}
+                                </ListItem>
+                                <Collapse in={openMenu} timeout="auto" unmountOnExit>
+                                    <List dense={true} component="div">
+                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showFileOpen()}>
+                                            <ListItemIcon>
+                                                <Icon path={mdiFolder} size={"1.0rem"} color={iconColor} />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                classes={primaryClass}
+                                                primary={
+                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
+                                                        File
+                                                    </Typography>
+                                                }
+                                            />
+                                        </ListItem>
+                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenUrl()}>
+                                            <ListItemIcon>
+                                                <Icon path={mdiWeb} size={"1.0rem"} color={iconColor} />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                classes={primaryClass}
+                                                primary={
+                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
+                                                        URL
+                                                    </Typography>
+                                                }
+                                            />
+                                        </ListItem>
+                                        {isInputDirSupported() && !isMobile ? (
+                                            <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenFolder()}>
+                                                <ListItemIcon>
+                                                    <Icon path={mdiFolderOpen} size={"1.0rem"} color={iconColor} />
+                                                </ListItemIcon>
+                                                <ListItemText
+                                                    classes={primaryClass}
+                                                    primary={
+                                                        <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
+                                                            Folder
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                        ) : null}
+                                        {isInputDirSupported() && !isMobile ? (
+                                            <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenDicomdir()}>
+                                                <ListItemIcon>
+                                                    <Icon path={mdiFolderOpen} size={"1.0rem"} color={iconColor} />
+                                                </ListItemIcon>
+                                                <ListItemText
+                                                    classes={primaryClass}
+                                                    primary={
+                                                        <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
+                                                            DICOMDIR
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                        ) : null}
+                                    </List>
+                                </Collapse>
 
-                                {/* <ListItem button onClick={() => this.clear()}>
-                <ListItemIcon><Icon path={mdiDelete} size={iconSize} color={iconColor} /></ListItemIcon>
-                <ListItemText classes={primaryClass} primary='Clear All' />
-              </ListItem> */}
+                                <ListItem button onClick={() => this.clear()}>
+                                    <ListItemIcon>
+                                        <Icon path={mdiDelete} size={iconSize} color={iconColor} />
+                                    </ListItemIcon>
+                                    <ListItemText classes={primaryClass} primary="Clear All" />
+                                </ListItem>
                                 <ListItem button onClick={this.handleLayout}>
                                     <ListItemIcon>
                                         <Icon path={mdiViewGridPlusOutline} size={iconSize} color={iconColor} />
@@ -2337,11 +2311,11 @@ class App extends PureComponent {
 
                 {visibleSettings ? <Settings onClose={this.hideSettings} /> : null}
 
-                {/* {visibleAbout ? <AboutDlg onClose={this.showAbout}/> : null} */}
+                {visibleAbout ? <AboutDlg onClose={this.showAbout} /> : null}
 
-                {/* {visibleDownloadZipDlg ? <DownloadZipDlg onClose={this.hideDownloadZipDlg} url={this.url} /> : null} */}
+                {visibleDownloadZipDlg ? <DownloadZipDlg onClose={this.hideDownloadZipDlg} url={this.url} /> : null}
 
-                {/* {visibleOpenMultipleFilesDlg ? <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={'local'} /> : null} */}
+                {visibleOpenMultipleFilesDlg ? <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={"local"} /> : null}
 
                 <Dialog open={visibleClearMeasureDlg} onClose={this.hideClearMeasureDlg}>
                     <DialogTitle>{"Are you sure to remove all the measurements?"}</DialogTitle>
@@ -2441,6 +2415,34 @@ class App extends PureComponent {
 
                 <div>
                     <input type="file" id="file_open" style={{ display: "none" }} ref={this.fileOpen} onChange={(e) => this.handleOpenLocalFs(e.target.files)} multiple />
+                </div>
+
+                <div>
+                    <input
+                        type="file"
+                        id="file_dicomdir"
+                        style={{ display: "none" }}
+                        ref={this.openDicomdir}
+                        onChange={(e) => this.handleOpenDicomdir(e.target.files)}
+                        webkitdirectory=""
+                        mozdirectory=""
+                        directory=""
+                        multiple
+                    />
+                </div>
+
+                <div>
+                    <input
+                        type="file"
+                        id="file_folder"
+                        style={{ display: "none" }}
+                        ref={this.openFolder}
+                        onChange={(e) => this.handleOpenFolder(e.target.files)}
+                        webkitdirectory=""
+                        mozdirectory=""
+                        directory=""
+                        multiple
+                    />
                 </div>
             </div>
         );

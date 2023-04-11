@@ -12,7 +12,7 @@ import {
   //allFilesStore,
   filesStore,
 } from '../actions'
-import { 
+import {
   getDicomPatientName,
   getDicomStudyId,
   getDicomStudyDate,
@@ -39,7 +39,7 @@ class OpenMultipleFilesDlg extends PureComponent {
   state = {
     progress: 0,
     cancel: false,
-  }  
+  }
 
   componentDidMount() {
     //console.log('OpenMultipleFilesDlg - componentDidMount: ', this.props.files)
@@ -58,8 +58,8 @@ class OpenMultipleFilesDlg extends PureComponent {
 
     //cornerstoneWADOImageLoader.wadouri.fileManager.purge()
     //cornerstone.imageCache.purgeCache()
-    
-    let imageIds = [] 
+
+    let imageIds = []
 
     for (let i=0; i < files.length; i++) {
       const file = files[i]
@@ -68,7 +68,7 @@ class OpenMultipleFilesDlg extends PureComponent {
       else // it's fs item
         imageIds.push(cornerstoneWADOImageLoader.wadouri.fileManager.addBuffer(file.data))
     }
-    
+
     //console.log('OpenMultipleFilesDlg - files: ', files)
 
     for (let i=0; i < files.length; i++) {
@@ -79,9 +79,9 @@ class OpenMultipleFilesDlg extends PureComponent {
         this.close()
         return
       }
-      
+
       //console.log('imageId', imageIds[i])
-      
+
       cornerstone.loadImage(imageIds[i]).then((image) => {
         //console.log('image', image)
         const patientName = getDicomPatientName(image)
@@ -93,14 +93,14 @@ class OpenMultipleFilesDlg extends PureComponent {
 
         const seriesDate = getDicomSeriesDate(image)
         const seriesTime = getDicomSeriesTime(image)
-        const seriesDescription = getDicomSeriesDescription(image)        
+        const seriesDescription = getDicomSeriesDescription(image)
         const seriesNumber = getDicomSeriesNumber(image)
 
         const instanceNumber = getDicomInstanceNumber(image)
         const sliceDistance = getDicomSliceDistance(image)
         const echoNumber = getDicomEchoNumber(image)
-        const sliceLocation = getDicomSliceLocation(image)  
-        const columns = getDicomColumns(image)       
+        const sliceLocation = getDicomSliceLocation(image)
+        const columns = getDicomColumns(image)
         const rows = getDicomRows(image)
 
         const studyDateTime = studyDate === undefined ? undefined : dicomDateTimeToLocale(`${studyDate}.${studyTime}`)
@@ -108,12 +108,12 @@ class OpenMultipleFilesDlg extends PureComponent {
         let item = null
         if (this.props.origin === 'local')
           item = {
-            imageId: imageIds[i], 
-            instanceNumber: instanceNumber, 
-            name: getFileNameCorrect(file.name), 
-            image: image, 
-            rows: rows, 
-            columns: columns, 
+            imageId: imageIds[i],
+            instanceNumber: instanceNumber,
+            name: getFileNameCorrect(file.name),
+            image: image,
+            rows: rows,
+            columns: columns,
             sliceDistance: sliceDistance,
             sliceLocation: sliceLocation,
             patient: {
@@ -136,14 +136,14 @@ class OpenMultipleFilesDlg extends PureComponent {
           }
         else
           item = {
-            imageId: imageIds[i], 
-            instanceNumber: instanceNumber, 
-            name: file.name, 
-            image: image, 
-            rows: rows, 
-            columns: columns, 
+            imageId: imageIds[i],
+            instanceNumber: instanceNumber,
+            name: file.name,
+            image: image,
+            rows: rows,
+            columns: columns,
             sliceDistance: sliceDistance,
-            sliceLocation: sliceLocation,  
+            sliceLocation: sliceLocation,
             patient: {
               patientName: patientName
             },
@@ -160,7 +160,7 @@ class OpenMultipleFilesDlg extends PureComponent {
               seriesDescription: seriesDescription,
               seriesNumber: seriesNumber,
               echoNumber: echoNumber
-            }          
+            }
           }
         this.items.push(item)
         this.count++
@@ -187,8 +187,8 @@ class OpenMultipleFilesDlg extends PureComponent {
         this.count++
       })
       if (this.count === files.length) {
-        
-      }   
+
+      }
     }
     //this.close()
   }
@@ -199,7 +199,7 @@ class OpenMultipleFilesDlg extends PureComponent {
   }
 
   cancel = () => {
-    this.setState({cancel: true}) 
+    this.setState({cancel: true})
   }
 
   render() {
