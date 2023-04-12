@@ -14,14 +14,14 @@ import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import PerfectScrollbar from 'react-perfect-scrollbar'
-import { 
-  getSettingsSaveAs, 
-  setSettingsSaveAs, 
+import {
+  getSettingsSaveAs,
+  setSettingsSaveAs,
   getSettingsSaveInto,
   setSettingsSaveInto,
-  getSettingsDcmHeader, 
-  setSettingsDcmHeader, 
-  getSettingsOverlay, 
+  getSettingsDcmHeader,
+  setSettingsDcmHeader,
+  getSettingsOverlay,
   setSettingsOverlay,
   getSettingsFsView,
   setSettingsFsView,
@@ -43,7 +43,7 @@ const useStyles = makeStyles(theme => ({
   },
   radioControl: {
     size: 'small',
-  },  
+  },
   title: {
     marginLeft: theme.spacing(2),
     flex: 1,
@@ -56,7 +56,7 @@ const useStyles = makeStyles(theme => ({
 })*/
 
 const Settings = ({ onClose }) => {
-  
+
   let saveAs = getSettingsSaveAs()
   let saveInto = getSettingsSaveInto()
   let exportAs = getSettingsDcmHeader()
@@ -66,12 +66,12 @@ const Settings = ({ onClose }) => {
   let mprInterpolation = getSettingsMprInterpolation()
 
   //const isIndexedDB = false // 'indexedDB' in window
-  
+
   const handleChangeSaveAs = event => {
     setState({ ...state, 'saveAs': event.target.value })
     setSettingsSaveAs(event.target.value)
   }
-  
+
   const handleChangeSaveInto = event => {
     setState({ ...state, 'saveInto': event.target.value })
     setSettingsSaveInto(event.target.value)
@@ -95,12 +95,12 @@ const Settings = ({ onClose }) => {
   const handleChangeDicomdirView = event => {
     setState({ ...state, 'dicomdirView': event.target.value })
     setSettingsDicomdirView(event.target.value)
-  }  
+  }
 
   const handleChangeMprInterpolation = event => {
     setState({ ...state, 'mprInterpolation': event.target.value })
     setSettingsMprInterpolation(event.target.value)
-  }  
+  }
   const classes = useStyles()
 
   const [state, setState] = React.useState({
@@ -125,16 +125,16 @@ const Settings = ({ onClose }) => {
           </Typography>
         </Toolbar>
       </AppBar>
-      <PerfectScrollbar> 
+      <PerfectScrollbar>
       <div>
         <div>
         <FormControl component="fieldset" className={classes.formControl}>
           <FormControlLabel
             control={
-              <Checkbox 
-                checked={state.overlay} 
+              <Checkbox
+                checked={state.overlay}
                 onChange={handleChangeOverlay}
-                value="overlay" 
+                value="overlay"
                 size='small'
               />
             }
@@ -142,7 +142,7 @@ const Settings = ({ onClose }) => {
           />
         </FormControl>
         </div>
-        <div>
+        {/* <div>
         <FormControl component="fieldset" className={classes.formControl}>
           <FormLabel component="legend" className={classes.formLabel}>Open sandbox file system from:</FormLabel>
           <RadioGroup size='small' aria-label="filesystem" name="filesystem" value={state.fsView} onChange={handleChangeFsView}>
@@ -150,8 +150,8 @@ const Settings = ({ onClose }) => {
             <FormControlLabel value="right" control={<Radio size='small' />} label="right" />
             <FormControlLabel value="bottom" control={<Radio size='small' />} label="bottom" />
           </RadioGroup>
-        </FormControl>    
-        </div>
+        </FormControl>
+        </div> */}
         <div>
         <FormControl component="fieldset" className={classes.formControl}>
           <FormLabel component="legend" className={classes.formLabel}>Open DICOMDIR panel from:</FormLabel>
@@ -160,7 +160,7 @@ const Settings = ({ onClose }) => {
             <FormControlLabel value="right" control={<Radio size='small' />} label="right" />
             <FormControlLabel value="bottom" control={<Radio size='small' />} label="bottom" />
           </RadioGroup>
-        </FormControl>                    
+        </FormControl>
         </div>
         <div>
         <FormControl component="fieldset" className={classes.formControl}>
@@ -178,7 +178,7 @@ const Settings = ({ onClose }) => {
             <FormControlLabel value="local" control={<Radio size='small' />} label="local file system" />
             <FormControlLabel value="sandbox" control={<Radio size='small' />} label="sandbox file system" />
           </RadioGroup>
-        </FormControl>          
+        </FormControl>
         </div>
         <div>
         <FormControl component="fieldset" className={classes.formControl}>
@@ -187,8 +187,8 @@ const Settings = ({ onClose }) => {
             <FormControlLabel value="json" control={<Radio size='small' />} label="JSON" />
             <FormControlLabel value="csv" control={<Radio size='small' />} label="CSV" />
           </RadioGroup>
-        </FormControl> 
-        </div> 
+        </FormControl>
+        </div>
         <div>
         <FormControl component="fieldset" className={classes.formControl}>
           <FormLabel component="legend" className={classes.formLabel}>MPR interpolation method:</FormLabel>
@@ -196,8 +196,8 @@ const Settings = ({ onClose }) => {
             <FormControlLabel value="no" control={<Radio size='small' />} label="No interpolation (duplicate planes)" />
             <FormControlLabel value="weightedlinear" control={<Radio size='small' />} label="Weighted linear interpolation" />
           </RadioGroup>
-        </FormControl> 
-        </div>            
+        </FormControl>
+        </div>
       </div>
       </PerfectScrollbar>
     </Dialog>

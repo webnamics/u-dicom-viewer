@@ -2,8 +2,8 @@
   "name": "u-dicom-viewer-package",
   "version": "0.8.1",
   "private": true,
-  "main":"./src/index.jsx",
-  "module":"./src/index.jsx",
+  "main": "./src/index.jsx",
+  "module": "./src/index.jsx",
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
@@ -42,7 +42,6 @@
     "react-rnd": "^10.1.10",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.1",
     "react-scroll-wheel-handler": "^1.1.5",
     "react-virtualized": "^9.21.2",
     "react-window": "^1.8.5",
@@ -54,12 +53,10 @@
     "webfontloader": "^1.6.28"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview --port 5000"
+
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -77,8 +74,10 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.10.5",
-    "babel-core": "^6.26.3",
-    "npm-run-all": "^4.1.5"
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "@vitejs/plugin-react": "^3.1.0",
+    "sass": "^1.58.0",
+    "vite": "^4.1.1"
   }
 }

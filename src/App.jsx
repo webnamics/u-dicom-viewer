@@ -42,7 +42,7 @@ import Tooltip from "@material-ui/core/Tooltip";
 import Typography from "@material-ui/core/Typography";
 import "react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
-
+import axios from "axios";
 import { isMobile, isTablet } from "react-device-detect";
 
 import {
@@ -125,6 +125,7 @@ import {
     mdiSkipNext,
     mdiSkipPrevious,
 } from "@mdi/js";
+import JSZip from "jszip";
 
 //import * as cornerstoneTools from "cornerstone-tools"
 
@@ -139,7 +140,7 @@ const activeColor = "rgba(0, 255, 0, 1.0)";
 const styles = (theme) => ({
     "@global": {
         body: {
-            backgroundColor: theme.palette.common.black,
+            backgroundColor: "transparent",
         },
     },
 
@@ -258,13 +259,13 @@ class App extends PureComponent {
         }
 
         this.activeDcmViewersNum = 0;
-
         this.referenceLines = {};
     }
 
     state = {
         anchorElLayout: null,
         anchorElToolsPanel: null,
+        mprAnchorEl: null,
         openMenu: false,
         openImageEdit: false,
         openTools: false,
@@ -302,6 +303,7 @@ class App extends PureComponent {
         visibleMessage: false,
         visibleReferenceLines: true,
         visibleSeriesLink: true,
+        isLoading: false,
     };
 
     /*componentDidUpdate() {
@@ -532,13 +534,31 @@ class App extends PureComponent {
         // Need to set the renderNode since the drawer uses an overlay
         //this.dialog = document.getElementById('drawer-routing-example-dialog')
         window.scrollTo(0, 0);
-        // if (this.props.zipFile) this.props.setFsZippedFile(this.props.zipFile);
-        console.log(this.props.dicoms);
-        // if (this.props.dicoms.length > 1) {
-        this.handleOpenLocalFs(this.props.dicoms);
-        // this.props.setFilesStore(this.props.dicoms);
-        // this.dicomViewersRefs[this.props.activeDcmIndex].runTool("setfiles", this.props.dicoms);
-        // }
+        if (this.props.zipFile) {
+            this.setState({ isLoading: true });
+            axios
+                .get("http://localhost:5000/rest/files?fileRef=s3%3A%2F%2F2023%2F04%2F08%2F58daf351-d99e-74af-20d7-7bef2d03240d%3Fname%3Dfiles", { responseType: "arraybuffer" })
+                // .get(this.props.zipFile, { responseType: "arraybuffer" })
+                .then((response) => {
+                    // Extract the zip file using JSZip
+                    const zip = new JSZip();
+                    return zip.loadAsync(response.data);
+                })
+                .then((zip) => {
+                    // Get the file names from the zip and set to state
+                    const fileObjectsPromises = Object.values(zip.files).map(async (data, index) => {
+                        return new File([await data.async("blob")], data.name);
+                    });
+                    Promise.all(fileObjectsPromises)
+                        .then((fileObjects) => {
+                            this.setState({ isLoading: false });
+                            this.handleOpenLocalFs(fileObjects);
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                        });
+                });
+        }
     }
 
     showAppBar = () => {
@@ -734,7 +754,7 @@ class App extends PureComponent {
     openMultipleFilesCompleted = () => {
         if (this.props.files !== null) {
             this.changeLayout(1, 1);
-
+            console.log(this.dicomViewersRefs, this.props.activeDcmIndex, this.dicomViewersRefs[this.props.activeDcmIndex]);
             this.dicomViewersRefs[this.props.activeDcmIndex].runTool("openimage", 0);
 
             const sliceMax = this.props.files.length;
@@ -814,6 +834,9 @@ class App extends PureComponent {
     closeLayout = () => {
         this.setState({ anchorElLayout: null });
     };
+    closeMpr = () => {
+        this.setState({ mprAnchorEl: null });
+    };
 
     changeLayout = (row, col) => {
         //console.log(`changeLayout, row: ${row} - col: ${col}`)
@@ -882,8 +905,8 @@ class App extends PureComponent {
         this.setState({ openTools: !this.state.openTools });
     };
 
-    toggleMpr = () => {
-        this.setState({ mprMenu: !this.state.mprMenu });
+    toggleMpr = (event) => {
+        this.setState({ mprMenu: this.state.mprMenu ? null : event.currentTarget });
     };
 
     layoutGridClick = (index) => {
@@ -966,41 +989,26 @@ class App extends PureComponent {
     };
 
     appBarTitle = (classes, isOpen, dcmViewer) => {
-        if (isMobile && !isTablet) {
-            if (isOpen) return null;
-            else
+        if (isOpen) {
+            const plane = this.getStringVisiblePlane();
+            if (this.state.sliceMax > 1 && this.mprPlane !== plane && this.mprPlane !== "") {
                 return (
                     <Typography variant="overline" className={classes.title}>
-                        <strong>U</strong> <strong>D</strong>icom <strong>V</strong>iewer
+                        {"MPR " + plane}
                     </Typography>
                 );
-        } else {
-            if (isOpen) {
-                const plane = this.getStringVisiblePlane();
-                if (this.state.sliceMax > 1 && this.mprPlane !== plane && this.mprPlane !== "") {
-                    return (
-                        <Typography variant="overline" className={classes.title}>
-                            {"MPR " + plane}
-                        </Typography>
-                    );
-                }
-                return (
-                    <Typography variant="overline" className={classes.title}>
-                        {dcmViewer.filename}
-                    </Typography>
-                );
-            } else if (this.props.dicomdir !== null) {
-                return (
-                    <Typography variant="overline" className={classes.title}>
-                        {this.props.dicomdir.dicomdir.webkitRelativePath}
-                    </Typography>
-                );
-            } else
-                return (
-                    <Typography variant="overline" className={classes.title}>
-                        <strong>U</strong> <strong>D</strong>icom <strong>V</strong>iewer
-                    </Typography>
-                );
+            }
+            return (
+                <Typography variant="overline" className={classes.title}>
+                    {dcmViewer?.filename}
+                </Typography>
+            );
+        } else if (this.props.dicomdir !== null) {
+            return (
+                <Typography variant="overline" className={classes.title}>
+                    {this.props.dicomdir.dicomdir.webkitRelativePath}
+                </Typography>
+            );
         }
     };
 
@@ -1717,7 +1725,8 @@ class App extends PureComponent {
         const visibleReferenceLines = this.state.visibleReferenceLines;
         const visibleSeriesLink = this.state.visibleSeriesLink;
         const visibleToolsPanel = Boolean(this.state.anchorElToolsPanel);
-        const mprMenu = this.state.mprMenu && this.mprPlane !== ""; //  && isMultipleFiles
+        const mprMenu = this.state.mprMenu; //  && isMultipleFiles
+        const isLoading = this.state.loading;
 
         //let iconToolColor = this.state.toolState === 1 ? '#FFFFFF' : '#999999'
 
@@ -1733,26 +1742,49 @@ class App extends PureComponent {
         return (
             <div>
                 <AppBar className={classes.appBar} position="static" elevation={0}>
-                    <Toolbar variant="dense">
-                        <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={this.toggleMainMenu}>
+                    <Toolbar variant="regular">
+                        {/* <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={this.toggleMainMenu}>
                             <MenuIcon />
-                        </IconButton>
+                        </IconButton> */}
                         {this.appBarTitle(classes, isOpen, dcmViewer)}
+                        {this.isMultipleFiles || mprMenu ? (
+                            <div>
+                                <div align="center">
+                                    <IconButton onClick={this.listOpenFilesFirstFrame} size="small">
+                                        <Icon path={mdiSkipBackward} size={"1.0rem"} color={iconColor} />
+                                    </IconButton>
+                                    <IconButton onClick={this.listOpenFilesPreviousFrame} size="small">
+                                        <Icon path={mdiSkipPrevious} size={"1.0rem"} color={iconColor} />
+                                    </IconButton>
+                                    <IconButton onClick={this.listOpenFilesScrolling} size="small">
+                                        <Icon path={this.state.listOpenFilesScrolling ? mdiPause : mdiPlay} size={"1.0rem"} color={iconColor} />
+                                    </IconButton>
+                                    <IconButton onClick={this.listOpenFilesNextFrame} size="small">
+                                        <Icon path={mdiSkipNext} size={"1.0rem"} color={iconColor} />
+                                    </IconButton>
+                                    <IconButton onClick={this.listOpenFilesLastFrame} size="small">
+                                        <Icon path={mdiSkipForward} size={"1.0rem"} color={iconColor} />
+                                    </IconButton>
+                                </div>
+                                <div style={{ textAlign: "center" }}>
+                                    <Typography type="body1" style={{ fontSize: "0.80em" }}>{`${this.state.sliceIndex + 1} / ${sliceMax}`}</Typography>
+                                </div>
+                                <div style={{ width: "130px", margin: "auto" }}>
+                                    <Slider
+                                        style={{ marginTop: "-4px" }}
+                                        value={this.state.sliceIndex}
+                                        onChange={this.handleSliceChange}
+                                        color="secondary"
+                                        min={0}
+                                        max={sliceMax - 1}
+                                        step={100 / sliceMax}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
 
                         <div className={classes.grow} />
-                        {!isOpen && !isDicomdir ? (
-                            <IconButton onClick={this.showAbout}>
-                                <Icon path={mdiInformationOutline} size={iconSize} color={iconColor} />
-                            </IconButton>
-                        ) : null}
-                        {/*
-            { iconTool !== null && this.props.tool !== null &&  isOpen ? (
-                <IconButton onClick={this.toolChange}>
-                  <Icon path={iconTool} size={iconSize} color={iconToolColor} />
-                </IconButton>
-              ) : null
-            }
-            */}
+
                         {isOpen && dcmViewer.numberOfFrames > 1 && isOpen ? (
                             <Tooltip title="Cine Player">
                                 <IconButton onClick={this.cinePlayer}>
@@ -1781,14 +1813,7 @@ class App extends PureComponent {
                                 </IconButton>
                             </Tooltip>
                         ) : null}
-                        {/* isOpen ? (
-              <Tooltip title="Toolbox">
-                <IconButton color="inherit" onClick={this.toggleToolbox}>
-                  <Icon path={mdiToolbox} size={iconSize} color={iconColor} />
-                </IconButton>
-              </Tooltip>
-              ) : null
-            */}
+
                         {isOpen ? (
                             <Tooltip title="Measurements">
                                 <IconButton color="inherit" onClick={this.toggleMeasure}>
@@ -1810,144 +1835,49 @@ class App extends PureComponent {
                                 </IconButton>
                             </Tooltip>
                         ) : null}
-                        {(isOpen && this.isMultipleFiles) || visibleMprOrthogonal ? (
-                            <Tooltip title="Explorer">
-                                <IconButton color="inherit" onClick={this.toggleExplorer}>
-                                    <Icon path={mdiAnimationOutline} size={iconSize} color={iconColor} />
+                        <Tooltip title="Settings">
+                            <IconButton onClick={() => this.showSettings()}>
+                                <Icon path={mdiCog} size={iconSize} color={iconColor} />
+                            </IconButton>
+                        </Tooltip>
+                        {isOpen && (
+                            <Tooltip title="Histogram">
+                                <IconButton onClick={() => this.toggleToolbox()}>
+                                    <Icon path={mdiChartHistogram} size={iconSize} color={iconColor} />
                                 </IconButton>
                             </Tooltip>
-                        ) : null}
-                        {isOpen ? (
-                            <Tooltip title="Sandbox File Manager">
-                                <IconButton color="inherit" onClick={this.toggleFileManager}>
-                                    <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
+                        )}
+                        {isOpen && (
+                            <Tooltip title="Invert">
+                                <IconButton onClick={() => this.toolExecute("Invert")}>
+                                    <Icon path={mdiInvertColors} size={iconSize} color={iconColor} />
                                 </IconButton>
                             </Tooltip>
-                        ) : null}
+                        )}
+                        {(isOpen || this.props.mprPlane === "") && (
+                            <Tooltip title="MPR">
+                                <IconButton onClick={this.toggleMpr}>
+                                    <Icon path={mdiAxisArrow} size={iconSize} color={iconColor} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Toolbar>
                 </AppBar>
-
-                <Drawer variant="persistent" open={visibleMainMenu} style={{ position: "relative", zIndex: 1 }} onClose={this.toggleMainMenu}>
-                    <div className={classes.toolbar}>
-                        <PerfectScrollbar>
-                            <List dense={true}>
-                                <ListItem button onClick={() => this.showAppBar()}>
-                                    <ListItemIcon>
-                                        <MenuIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Tool Bar" />
-                                </ListItem>
-                                <ListItem button onClick={() => this.toggleFileManager()}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiFileCabinet} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="File Manager" />
-                                </ListItem>
-
-                                <ListItem button onClick={() => this.toggleOpenMenu()}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiFolderMultiple} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Open ..." />
-                                    {openMenu ? <ExpandLess /> : <ExpandMore />}
-                                </ListItem>
-                                <Collapse in={openMenu} timeout="auto" unmountOnExit>
-                                    <List dense={true} component="div">
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showFileOpen()}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiFolder} size={"1.0rem"} color={iconColor} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
-                                                        File
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenUrl()}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiWeb} size={"1.0rem"} color={iconColor} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
-                                                        URL
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        {isInputDirSupported() && !isMobile ? (
-                                            <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenFolder()}>
-                                                <ListItemIcon>
-                                                    <Icon path={mdiFolderOpen} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    classes={primaryClass}
-                                                    primary={
-                                                        <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
-                                                            Folder
-                                                        </Typography>
-                                                    }
-                                                />
-                                            </ListItem>
-                                        ) : null}
-                                        {isInputDirSupported() && !isMobile ? (
-                                            <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.showOpenDicomdir()}>
-                                                <ListItemIcon>
-                                                    <Icon path={mdiFolderOpen} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    classes={primaryClass}
-                                                    primary={
-                                                        <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-20px" }}>
-                                                            DICOMDIR
-                                                        </Typography>
-                                                    }
-                                                />
-                                            </ListItem>
-                                        ) : null}
-                                    </List>
-                                </Collapse>
-
-                                <ListItem button onClick={() => this.clear()}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiDelete} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Clear All" />
-                                </ListItem>
-                                <ListItem button onClick={this.handleLayout}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiViewGridPlusOutline} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Layout" />
-                                </ListItem>
-                                <ListItem button onClick={() => this.showSettings()}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiCog} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Settings" />
-                                </ListItem>
-                                <Divider />
-                                <ListItem button onClick={() => this.toggleToolbox()} disabled={!isOpen}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiChartHistogram} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Histogram" />
-                                </ListItem>
-                                <ListItem button onClick={() => this.toggleMpr()} disabled={!isOpen || this.mprPlane === ""}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiAxisArrow} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="MPR" />
-                                    {mprMenu ? <ExpandLess /> : <ExpandMore />}
-                                </ListItem>
-
-                                <Collapse in={mprMenu} timeout="auto" unmountOnExit>
-                                    <List dense={true} component="div">
-                                        {/*
+                <Popover
+                    open={mprMenu}
+                    anchorEl={this.state.mprAnchorEl}
+                    onClose={this.toggleMpr}
+                    anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "right",
+                    }}
+                    transformOrigin={{
+                        vertical: "top",
+                        horizontal: "left",
+                    }}
+                >
+                    <List dense={true} component="div">
+                        {/*
                   <ListItem button style={{paddingLeft: 40}} onClick={() => this.mpr3D()}>
                     {visibleMpr3D ? <ListItemIcon style={{marginLeft: '-10px'}}><Icon path={mdiCheck} size={'1.0rem'} color={iconColor} /></ListItemIcon> : null}
                     <ListItemText
@@ -1957,307 +1887,68 @@ class App extends PureComponent {
                       } />
                   </ListItem>
 */}
-                                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprOrthogonal()}>
-                                            {visibleMprOrthogonal ? (
-                                                <ListItemIcon style={{ marginLeft: "-10px" }}>
-                                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                            ) : null}
-                                            <ListItemText
-                                                style={visibleMprOrthogonal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Orthogonal
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprCoronal()}>
-                                            {visibleMprCoronal ? (
-                                                <ListItemIcon style={{ marginLeft: "-10px" }}>
-                                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                            ) : null}
-                                            <ListItemText
-                                                style={visibleMprCoronal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Coronal
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprSagittal()}>
-                                            {visibleMprSagittal ? (
-                                                <ListItemIcon style={{ marginLeft: "-10px" }}>
-                                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                            ) : null}
-                                            <ListItemText
-                                                style={visibleMprSagittal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Sagittal
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprAxial()}>
-                                            {visibleMprAxial ? (
-                                                <ListItemIcon style={{ marginLeft: "-10px" }}>
-                                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
-                                                </ListItemIcon>
-                                            ) : null}
-                                            <ListItemText
-                                                style={visibleMprAxial ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Axial
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                    </List>
-                                </Collapse>
-
-                                <ListItem button onClick={() => this.toggleImageEdit()} disabled={!isOpen}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiImageEdit} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Edit" />
-                                    {openImageEdit ? <ExpandLess /> : <ExpandMore />}
-                                </ListItem>
-                                <Collapse in={openImageEdit} timeout="auto" unmountOnExit>
-                                    <List dense={true} component="div">
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Invert")}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiInvertColors} size={iconSize} color={iconColor} />
-                                            </ListItemIcon>
-                                            <ListItemText classes={primaryClass} primary="Invert" />
-                                        </ListItem>
-                                    </List>
-                                </Collapse>
-                                <ListItem button onClick={() => this.toggleTools()} disabled={!isOpen}>
-                                    <ListItemIcon>
-                                        <Icon path={mdiTools} size={iconSize} color={iconColor} />
-                                    </ListItemIcon>
-                                    <ListItemText classes={primaryClass} primary="Tools" />
-                                    {openTools ? <ExpandLess /> : <ExpandMore />}
-                                </ListItem>
-                                <Collapse in={openTools} timeout="auto" unmountOnExit>
-                                    <List dense={true} component="div">
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("notool")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiCursorDefault} size={iconSizeSmall} color={this.colorIcon("notool")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        No Tool
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("referencelines")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiArrowSplitHorizontal} size={iconSizeSmall} color={visibleReferenceLines ? activeColor : iconColor} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Reference Lines
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("serieslink")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiVectorLink} size={iconSizeSmall} color={visibleSeriesLink ? activeColor : iconColor} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Link Series
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Wwwc")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiArrowAll} size={iconSize} color={this.colorIcon("Wwwc")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        WW/WC
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Pan")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiCursorPointer} size={iconSize} color={this.colorIcon("Pan")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Pan
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Zoom")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiMagnify} size={iconSize} color={this.colorIcon("Zoom")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Zoom
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Magnify")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiCheckboxIntermediate} size={iconSize} color={this.colorIcon("Magnify")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Magnify
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Length")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiRuler} size={iconSize} color={this.colorIcon("Length")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Length
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Probe")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiEyedropper} size={iconSize} color={this.colorIcon("Probe")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Probe
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("Angle")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiAngleAcute} size={iconSize} color={this.colorIcon("Angle")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Angle
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("EllipticalRoi")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiEllipse} size={iconSize} color={this.colorIcon("EllipticalRoi")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Elliptical Roi
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("RectangleRoi")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiRectangle} size={iconSize} color={this.colorIcon("RectangleRoi")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Rectangle Roi
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                        <ListItem button style={{ paddingLeft: 30 }} onClick={() => this.toolExecute("FreehandRoi")} disabled={!isOpen}>
-                                            <ListItemIcon>
-                                                <Icon path={mdiGesture} size={iconSize} color={this.colorIcon("FreehandRoi")} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                classes={primaryClass}
-                                                primary={
-                                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
-                                                        Freehand Roi
-                                                    </Typography>
-                                                }
-                                            />
-                                        </ListItem>
-                                    </List>
-                                </Collapse>
-                            </List>
-
-                            {this.isMultipleFiles || mprMenu ? (
-                                <div>
-                                    <Divider />
-                                    <div align="center">
-                                        <IconButton onClick={this.listOpenFilesFirstFrame} size="small">
-                                            <Icon path={mdiSkipBackward} size={"1.0rem"} color={iconColor} />
-                                        </IconButton>
-                                        <IconButton onClick={this.listOpenFilesPreviousFrame} size="small">
-                                            <Icon path={mdiSkipPrevious} size={"1.0rem"} color={iconColor} />
-                                        </IconButton>
-                                        <IconButton onClick={this.listOpenFilesScrolling} size="small">
-                                            <Icon path={this.state.listOpenFilesScrolling ? mdiPause : mdiPlay} size={"1.0rem"} color={iconColor} />
-                                        </IconButton>
-                                        <IconButton onClick={this.listOpenFilesNextFrame} size="small">
-                                            <Icon path={mdiSkipNext} size={"1.0rem"} color={iconColor} />
-                                        </IconButton>
-                                        <IconButton onClick={this.listOpenFilesLastFrame} size="small">
-                                            <Icon path={mdiSkipForward} size={"1.0rem"} color={iconColor} />
-                                        </IconButton>
-                                    </div>
-                                    <div style={{ textAlign: "center" }}>
-                                        <Typography type="body1" style={{ fontSize: "0.80em" }}>{`${this.state.sliceIndex + 1} / ${sliceMax}`}</Typography>
-                                    </div>
-                                    <div style={{ width: "130px", margin: "auto" }}>
-                                        <Slider
-                                            style={{ marginTop: "-4px" }}
-                                            value={this.state.sliceIndex}
-                                            onChange={this.handleSliceChange}
-                                            color="secondary"
-                                            min={0}
-                                            max={sliceMax - 1}
-                                            step={100 / sliceMax}
-                                        />
-                                    </div>
-                                </div>
+                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprOrthogonal()}>
+                            {visibleMprOrthogonal ? (
+                                <ListItemIcon style={{ marginLeft: "-10px" }}>
+                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
+                                </ListItemIcon>
                             ) : null}
-                        </PerfectScrollbar>
-                    </div>
-                </Drawer>
+                            <ListItemText
+                                style={visibleMprOrthogonal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
+                                primary={
+                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
+                                        Orthogonal
+                                    </Typography>
+                                }
+                            />
+                        </ListItem>
+                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprCoronal()}>
+                            {visibleMprCoronal ? (
+                                <ListItemIcon style={{ marginLeft: "-10px" }}>
+                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
+                                </ListItemIcon>
+                            ) : null}
+                            <ListItemText
+                                style={visibleMprCoronal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
+                                primary={
+                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
+                                        Coronal
+                                    </Typography>
+                                }
+                            />
+                        </ListItem>
+                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprSagittal()}>
+                            {visibleMprSagittal ? (
+                                <ListItemIcon style={{ marginLeft: "-10px" }}>
+                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
+                                </ListItemIcon>
+                            ) : null}
+                            <ListItemText
+                                style={visibleMprSagittal ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
+                                primary={
+                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
+                                        Sagittal
+                                    </Typography>
+                                }
+                            />
+                        </ListItem>
+                        <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprAxial()}>
+                            {visibleMprAxial ? (
+                                <ListItemIcon style={{ marginLeft: "-10px" }}>
+                                    <Icon path={mdiCheck} size={"1.0rem"} color={iconColor} />
+                                </ListItemIcon>
+                            ) : null}
+                            <ListItemText
+                                style={visibleMprAxial ? { marginLeft: "-7px" } : { marginLeft: "40px" }}
+                                primary={
+                                    <Typography type="body1" style={{ fontSize: "0.80em", marginLeft: "-23px" }}>
+                                        Axial
+                                    </Typography>
+                                }
+                            />
+                        </ListItem>
+                    </List>
+                </Popover>
 
                 <Drawer variant="persistent" anchor="right" open={visibleHeader} onClose={this.toggleHeader}>
                     {visibleHeader ? <DicomHeader dcmViewer={dcmViewer} classes={classes} color={iconColor} /> : null}
