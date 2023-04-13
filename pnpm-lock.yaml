@@ -26,23 +26,23 @@ dependencies:
     specifier: ^7.3.1
     version: 7.4.1
   axios:
-    specifier: ^0.19.2
-    version: 0.19.2
+    specifier: ^1.3.5
+    version: 1.3.5
   blob-util:
     specifier: ^2.0.2
     version: 2.0.2
   cornerstone-core:
-    specifier: ^2.3.0
+    specifier: ^2.6.1
     version: 2.6.1
   cornerstone-file-image-loader:
     specifier: ^0.3.0
     version: 0.3.0
   cornerstone-math:
-    specifier: ^0.1.8
+    specifier: ^0.1.10
     version: 0.1.10
   cornerstone-tools:
-    specifier: ^4.18.1
-    version: 4.22.1
+    specifier: ^6.0.9
+    version: 6.0.9(cornerstone-core@2.6.1)
   cornerstone-wado-image-loader:
     specifier: git+https://github.com/webnamics/cornerstoneWADOImageLoader.git
     version: github.com/webnamics/cornerstoneWADOImageLoader/86629c513474901a39758f179441f64ef830c36e
@@ -80,8 +80,8 @@ dependencies:
     specifier: ^1.66.0
     version: 1.69.3(@date-io/core@1.3.13)(@material-ui/core@4.12.4)(react-dom@16.14.0)(react@16.14.0)
   mathjs:
-    specifier: ^7.1.0
-    version: 7.6.0
+    specifier: ^11.8.0
+    version: 11.8.0
   react:
     specifier: ^16.13.1
     version: 16.14.0
@@ -1212,19 +1212,24 @@ packages:
       lodash: 4.17.21
     dev: false
 
+  /asynckit@0.4.0:
+    resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+    dev: false
+
   /atob@2.1.2:
     resolution: {integrity: sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==}
     engines: {node: '>= 4.5.0'}
     hasBin: true
     dev: false
 
-  /axios@0.19.2:
-    resolution: {integrity: sha512-fjgm5MvRHLhx+osE2xoekY70AhARk3a6hkN+3Io1jc00jtquGvxYlKlsFUhmUET0V5te6CcZI7lcv2Ym61mjHA==}
-    deprecated: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
+  /axios@1.3.5:
+    resolution: {integrity: sha512-glL/PvG/E+xCWwV8S6nCHcrfg1exGx7vxyUIivIA1iL7BIh6bePylCfVHwp6k13ao7SATxB6imau2kqY+I67kw==}
     dependencies:
-      follow-redirects: 1.5.10
+      follow-redirects: 1.15.2
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
     transitivePeerDependencies:
-      - supports-color
+      - debug
     dev: false
 
   /balanced-match@1.0.2:
@@ -1349,6 +1354,13 @@ packages:
     resolution: {integrity: sha512-72fSenhMw2HZMTVHeCA9KCmpEIbzWiQsjN+BHcBbS9vr1mtt+vJjPdksIBNUmKAW8TFUDPJK5SUU3QhE9NEXDw==}
     dev: true
 
+  /combined-stream@1.0.8:
+    resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
+    engines: {node: '>= 0.8'}
+    dependencies:
+      delayed-stream: 1.0.0
+    dev: false
+
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
     dev: false
@@ -1393,16 +1405,15 @@ packages:
     resolution: {integrity: sha512-23XSAyP7t70ANvhFyqwvva+zFd1bQ2d5GL7tg9qKE932WmImjA2Y9tiy5n0iTtnf51W/78Png8Lia2o4dCdJaQ==}
     dev: false
 
-  /cornerstone-math@0.1.7:
-    resolution: {integrity: sha512-svsDSoqLNFM9niCV2AtV2DNmRkYztT1v80lVdbA5hkgdGdpWg5/h2On794zbqBK+aI3hNOHufERDsI4wdXGknA==}
-    dev: false
-
-  /cornerstone-tools@4.22.1:
-    resolution: {integrity: sha512-vwZ3ULHcI5EmtOspp1fmuo/zmrHeZZRAcpb2cPJT0gPIjb69L6MjgNOkLkQ6q/zZpXgLrjv1Y3fbr0U3wQV2CQ==}
+  /cornerstone-tools@6.0.9(cornerstone-core@2.6.1):
+    resolution: {integrity: sha512-k9pYgxlE7ep+8Uski6baX1fitcRBo+SFl1IImLw8DZ7rv/7Wzr8+wE+NQI+zJkXVnVjz52touH4mTYqb7yyaCA==}
     engines: {node: '>=8.16.0'}
+    peerDependencies:
+      cornerstone-core: ^2.6.0
     dependencies:
       '@babel/runtime': 7.1.2
-      cornerstone-math: 0.1.7
+      cornerstone-core: 2.6.1
+      cornerstone-math: 0.1.10
     dev: false
 
   /cornerstone-web-image-loader@2.1.1:
@@ -1452,17 +1463,6 @@ packages:
     resolution: {integrity: sha512-mYtLl1xfZLi1m4RtQYlZgJUNQjl4ZxVnHzIR8nLLgi4q1YT8o/WM+MK/f8yfcc9s5Ir5zRaPZyZU6xs1Syoocg==}
     dev: false
 
-  /debug@3.1.0:
-    resolution: {integrity: sha512-OX8XqP7/1a9cqkxYw2yXss15f26NKWBpDXQd0/uK/KPqdQhxbPa994hnzjcE2VqQpDslf55723cKPUOGSmMY3g==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 2.0.0
-    dev: false
-
   /debug@4.3.4:
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
     engines: {node: '>=6.0'}
@@ -1477,6 +1477,11 @@ packages:
 
   /decimal.js@10.4.3:
     resolution: {integrity: sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==}
+    dev: false
+
+  /delayed-stream@1.0.0:
+    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
+    engines: {node: '>=0.4.0'}
     dev: false
 
   /dexie@3.2.3:
@@ -1606,13 +1611,23 @@ packages:
       path-exists: 4.0.0
     dev: false
 
-  /follow-redirects@1.5.10:
-    resolution: {integrity: sha512-0V5l4Cizzvqt5D44aTXbFZz+FtyXV1vrDN6qrelxtfYQKW0KO0W2T/hkE8xvGa/540LkZlkaUjO4ailYTFtHVQ==}
+  /follow-redirects@1.15.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
     engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dev: false
+
+  /form-data@4.0.0:
+    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
+    engines: {node: '>= 6'}
     dependencies:
-      debug: 3.1.0
-    transitivePeerDependencies:
-      - supports-color
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.35
     dev: false
 
   /fraction.js@4.2.0:
@@ -2031,33 +2046,42 @@ packages:
       - react-native
     dev: false
 
-  /mathjs@7.6.0:
-    resolution: {integrity: sha512-abywR28hUpKF4at5jE8Ys+Kigk40eKMT5mcBLD0/dtsqjfOLbtzd3WjlRqIopNo7oQ6FME51qph6lb8h/bhpUg==}
-    engines: {node: '>= 10'}
+  /mathjs@11.8.0:
+    resolution: {integrity: sha512-I7r8HCoqUGyEiHQdeOCF2m2k9N+tcOHO3cZQ3tyJkMMBQMFqMR7dMQEboBMJAiFW2Um3PEItGPwcOc4P6KRqwg==}
+    engines: {node: '>= 14'}
     hasBin: true
     dependencies:
+      '@babel/runtime': 7.21.0
       complex.js: 2.1.1
       decimal.js: 10.4.3
       escape-latex: 1.2.0
       fraction.js: 4.2.0
       javascript-natural-sort: 0.7.1
-      seed-random: 2.2.0
+      seedrandom: 3.0.5
       tiny-emitter: 2.1.0
-      typed-function: 2.1.0
+      typed-function: 4.1.0
     dev: false
 
   /memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
     dev: false
 
+  /mime-db@1.52.0:
+    resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
+    engines: {node: '>= 0.6'}
+    dev: false
+
+  /mime-types@2.1.35:
+    resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
+    engines: {node: '>= 0.6'}
+    dependencies:
+      mime-db: 1.52.0
+    dev: false
+
   /minimatch@3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
     dependencies:
       brace-expansion: 1.1.11
-    dev: false
-
-  /ms@2.0.0:
-    resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
     dev: false
 
   /ms@2.1.2:
@@ -2205,6 +2229,10 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       react-is: 16.13.1
+    dev: false
+
+  /proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
     dev: false
 
   /raf-schd@4.0.3:
@@ -2576,8 +2604,8 @@ packages:
       object-assign: 4.1.1
     dev: false
 
-  /seed-random@2.2.0:
-    resolution: {integrity: sha512-34EQV6AAHQGhoc0tn/96a9Fsi6v2xdqe/dMUwljGRaFOzR3EgRmECvD0O8vi8X+/uQ50LGHfkNu/Eue5TPKZkQ==}
+  /seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
     dev: false
 
   /semver@6.3.0:
@@ -2701,9 +2729,9 @@ packages:
     resolution: {integrity: sha512-77EbyPPpMz+FRFRuAFlWMtmgUWGe9UOG2Z25NqCwiIjRhOf5iKGuzSe5P2w1laq+FkRy4p+PCuVkJSGkzTEKVw==}
     dev: false
 
-  /typed-function@2.1.0:
-    resolution: {integrity: sha512-bctQIOqx2iVbWGDGPWwIm18QScpu2XRmkC19D8rQGFsjKSgteq/o1hTZvIG/wuDq8fanpBDrLkLq+aEN/6y5XQ==}
-    engines: {node: '>= 10'}
+  /typed-function@4.1.0:
+    resolution: {integrity: sha512-DGwUl6cioBW5gw2L+6SMupGwH/kZOqivy17E4nsh1JI9fKF87orMmlQx3KISQPmg3sfnOUGlwVkroosvgddrlg==}
+    engines: {node: '>= 14'}
     dev: false
 
   /ua-parser-js@0.7.35:
