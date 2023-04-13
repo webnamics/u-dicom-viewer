@@ -537,20 +537,13 @@ class App extends PureComponent {
         // Need to set the renderNode since the drawer uses an overlay
         //this.dialog = document.getElementById('drawer-routing-example-dialog')
         window.scrollTo(0, 0);
-        if (true) {
-            // if (this.props.zipFile) {
+        if (this.props.zipFile) {
             this.setState({ isLoading: true });
             axios
                 .request({
-                    url: "http://localhost:5000/rest/files?fileRef=s3%3A%2F%2F2023%2F04%2F08%2F58daf351-d99e-74af-20d7-7bef2d03240d%3Fname%3Dfiles",
-                    // url: this.props.zipFile,
+                    url: this.props.zipFile,
                     method: "GET",
-                    responseType: "arraybuffer",
-                    onDownloadProgress: (progressEvent) => {
-                        const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-                        console.log(progressEvent.loaded, progressEvent.total);
-                        this.setState({ downloadProgress: progress });
-                    },
+                    responseType: "arraybuffer"
                 })
                 .then((response) => {
                     // Extract the zip file using JSZip
@@ -1751,6 +1744,10 @@ class App extends PureComponent {
         //console.log('this.mprPlane: ', this.mprPlane)
         //console.log('mprMenu: ', mprMenu)
         //console.log('mprMode: ', this.state.mprMode)
+
+        if (this.state.isLoading){
+            return <h2> Downloading Files ..... </h2>
+        }
 
         return (
             <Box style={this.props.style}>
