@@ -2,8 +2,8 @@
   "name": "u-dicom-viewer-package",
   "version": "0.8.1",
   "private": true,
-  "main": "./src/index.jsx",
-  "module": "./src/index.jsx",
+  "main": "./src/App.jsx",
+  "module": "./src/App.jsx",
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",

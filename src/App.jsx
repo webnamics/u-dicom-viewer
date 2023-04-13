@@ -1,6 +1,8 @@
 import React, { PureComponent } from "react";
 import { withStyles } from "@material-ui/core/styles";
 import { connect } from "react-redux";
+import { Provider } from "react-redux";
+import store from "./store";
 import AboutDlg from "./components/AboutDlg";
 import Dicomdir from "./components/Dicomdir";
 import DicomViewer from "./components/DicomViewer";
@@ -43,6 +45,7 @@ import Typography from "@material-ui/core/Typography";
 import "react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import axios from "axios";
+import Box from "@material-ui/core/Box";
 import { isMobile, isTablet } from "react-device-detect";
 
 import {
@@ -534,11 +537,21 @@ class App extends PureComponent {
         // Need to set the renderNode since the drawer uses an overlay
         //this.dialog = document.getElementById('drawer-routing-example-dialog')
         window.scrollTo(0, 0);
-        if (this.props.zipFile) {
+        if (true) {
+            // if (this.props.zipFile) {
             this.setState({ isLoading: true });
             axios
-                .get("http://localhost:5000/rest/files?fileRef=s3%3A%2F%2F2023%2F04%2F08%2F58daf351-d99e-74af-20d7-7bef2d03240d%3Fname%3Dfiles", { responseType: "arraybuffer" })
-                // .get(this.props.zipFile, { responseType: "arraybuffer" })
+                .request({
+                    url: "http://localhost:5000/rest/files?fileRef=s3%3A%2F%2F2023%2F04%2F08%2F58daf351-d99e-74af-20d7-7bef2d03240d%3Fname%3Dfiles",
+                    // url: this.props.zipFile,
+                    method: "GET",
+                    responseType: "arraybuffer",
+                    onDownloadProgress: (progressEvent) => {
+                        const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                        console.log(progressEvent.loaded, progressEvent.total);
+                        this.setState({ downloadProgress: progress });
+                    },
+                })
                 .then((response) => {
                     // Extract the zip file using JSZip
                     const zip = new JSZip();
@@ -1740,8 +1753,8 @@ class App extends PureComponent {
         //console.log('mprMode: ', this.state.mprMode)
 
         return (
-            <div>
-                <AppBar className={classes.appBar} position="static" elevation={0}>
+            <Box style={this.props.style}>
+                <AppBar className={classes.appBar} style={{ height: "min-content" }} position="static" elevation={0}>
                     <Toolbar variant="regular">
                         {/* <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu" onClick={this.toggleMainMenu}>
                             <MenuIcon />
@@ -1785,7 +1798,7 @@ class App extends PureComponent {
 
                         <div className={classes.grow} />
 
-                        {isOpen && dcmViewer.numberOfFrames > 1 && isOpen ? (
+                        {isOpen && dcmViewer?.numberOfFrames > 1 ? (
                             <Tooltip title="Cine Player">
                                 <IconButton onClick={this.cinePlayer}>
                                     <Icon path={mdiVideo} size={iconSize} color={iconColor} />
@@ -1821,7 +1834,7 @@ class App extends PureComponent {
                                 </IconButton>
                             </Tooltip>
                         ) : null}
-                        {isOpen && dcmViewer.isDicom ? (
+                        {isOpen && dcmViewer?.isDicom ? (
                             <Tooltip title="Dicom Header">
                                 <IconButton color="inherit" onClick={this.toggleHeader}>
                                     <Icon path={mdiFileDocument} size={iconSize} color={iconColor} />
@@ -1877,16 +1890,6 @@ class App extends PureComponent {
                     }}
                 >
                     <List dense={true} component="div">
-                        {/*
-                  <ListItem button style={{paddingLeft: 40}} onClick={() => this.mpr3D()}>
-                    {visibleMpr3D ? <ListItemIcon style={{marginLeft: '-10px'}}><Icon path={mdiCheck} size={'1.0rem'} color={iconColor} /></ListItemIcon> : null}
-                    <ListItemText
-                      style={visibleMpr3D ? {marginLeft: '-7px'} : {marginLeft: '40px'}}
-                      primary={
-                        <Typography type="body1" style={{fontSize: '0.80em', marginLeft: '-23px'}}>3D</Typography>
-                      } />
-                  </ListItem>
-*/}
                         <ListItem button style={{ paddingLeft: 40 }} onClick={() => this.mprOrthogonal()}>
                             {visibleMprOrthogonal ? (
                                 <ListItemIcon style={{ marginLeft: "-10px" }}>
@@ -1974,7 +1977,7 @@ class App extends PureComponent {
 
                 <Drawer variant="persistent" anchor="right" open={visibleToolbox} onClose={this.toggleToolbox}>
                     <div style={{ marginTop: "48px" }}>
-                        <div>{isOpen ? <Histogram key={dcmViewer.filename} /> : null}</div>
+                        <div>{isOpen ? <Histogram key={dcmViewer?.filename} /> : null}</div>
                     </div>
                 </Drawer>
 
@@ -2135,7 +2138,7 @@ class App extends PureComponent {
                         multiple
                     />
                 </div>
-            </div>
+            </Box>
         );
     }
 }
@@ -2177,4 +2180,11 @@ const mapDispatchToProps = (dispatch) => {
     };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(App));
+const NenApp = connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(App));
+
+const Wrap = (props) => (
+    <Provider store={store}>
+        <NenApp {...props} />{" "}
+    </Provider>
+);
+export default Wrap;

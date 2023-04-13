@@ -24,3 +24,4 @@ yarn-error.log*
 
 # build artifacts
 +src/**/*.css
+src/App.jsx
